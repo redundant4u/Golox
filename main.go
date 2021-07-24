@@ -1,11 +1,15 @@
 package main
 
 import (
+	"Golox/lox"
 	"bufio"
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"os"
 )
+
+var hadError = false
 
 func check(err error) {
 	if err != nil {
@@ -17,6 +21,10 @@ func runFile(file string) {
 	dat, err := ioutil.ReadFile(file)
 	check(err)
 	run(string(dat))
+
+	if hadError {
+		os.Exit(65)
+	}
 }
 
 func runPrompt() {
@@ -26,21 +34,32 @@ func runPrompt() {
 		dat, err := reader.ReadBytes('\n')
 		check(err)
 		run(string(dat))
+		hadError = false
 	}
 }
 
 func run(src string) {
 	fmt.Println(src)
+
+	scanner := lox.NewScanner(src)
+	tokens := scanner.ScanTokens()
+	for _, token := range tokens {
+		fmt.Println(token)
+	}
 }
 
 func main() {
-	args := os.Args[1:]
+	// args := os.Args[1:]
+	file := flag.String("file", "", "the script file to execute")
+	flag.Parse()
+
+	args := flag.Args()
 
 	if len(args) > 1 {
-		fmt.Println("Usage: ./golox [script]")
+		fmt.Println("Usage: ./main [script]")
 		os.Exit(64)
 	} else if len(args) == 1 {
-		runFile(args[0])
+		runFile(*file)
 	} else {
 		runPrompt()
 	}
