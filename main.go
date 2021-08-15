@@ -9,7 +9,10 @@ import (
 	"os"
 )
 
-var hadError = false
+var (
+	hadError        = false
+	hadRuntimeError = false
+)
 
 func check(err error) {
 	if err != nil {
@@ -24,6 +27,10 @@ func runFile(file string) {
 
 	if hadError {
 		os.Exit(65)
+	}
+
+	if hadRuntimeError {
+		os.Exit(79)
 	}
 }
 
@@ -43,13 +50,16 @@ func run(src string) {
 
 	scanner := lox.NewScanner(src)
 	tokens := scanner.ScanTokens()
+	// parser := lox.NewParser(tokens)
+	// interpreter := lox.NewInterpreter()
+
+	// interpreter.Interprete(parser.Parse())
 	for _, token := range tokens {
 		fmt.Println(token)
 	}
 }
 
 func main() {
-	// args := os.Args[1:]
 	file := flag.String("file", "", "the script file to execute")
 	flag.Parse()
 
