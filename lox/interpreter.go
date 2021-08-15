@@ -1,5 +1,7 @@
 package lox
 
+import "fmt"
+
 type Interpreter struct {
 }
 
@@ -7,9 +9,15 @@ func NewInterpreter() *Interpreter {
 	return &Interpreter{}
 }
 
-func (i *Interpreter) Interprete(exprs []Expr) {
-	for _, expr := range exprs {
-		i.evaluate(expr)
+func (i *Interpreter) Interprete(statements []Stmt) {
+	defer func() {
+		if r := recover(); r != nil {
+			// RuntimeError(err.(string))
+		}
+	}()
+
+	for _, statement := range statements {
+		i.execute(statement)
 	}
 }
 
@@ -60,12 +68,19 @@ func (i *Interpreter) VisitBinaryExpr(expr *Binary) interface{} {
 		lval, rval := checkNumberOperands(expr.Operator, left, right)
 		return lval - rval
 	case PLUS:
-		lval, ok1 := left.(string)
-		rval, ok2 := right.(string)
-
-		if ok1 == true && ok2 == true {
-			return lval + rval
+		switch lval := left.(type) {
+		case float64:
+			switch rval := right.(type) {
+			case float64:
+				return lval + rval
+			}
+		case string:
+			switch rval := right.(type) {
+			case string:
+				return lval + rval
+			}
 		}
+
 	case SLASH:
 		lval, rval := checkNumberOperands(expr.Operator, left, right)
 		return lval / rval
@@ -77,8 +92,24 @@ func (i *Interpreter) VisitBinaryExpr(expr *Binary) interface{} {
 	return nil
 }
 
+func (i *Interpreter) VisitExpressionStmt(stmt *Expression) interface{} {
+	i.evaluate(stmt.Expression)
+	return nil
+}
+
+func (i *Interpreter) VisitPrintStmt(stmt *Print) interface{} {
+	val := i.evaluate(stmt.Expression)
+	fmt.Println(val)
+
+	return nil
+}
+
 func (i *Interpreter) evaluate(expr Expr) interface{} {
 	return expr.Visit(i)
+}
+
+func (i *Interpreter) execute(stmt Stmt) interface{} {
+	return stmt.Visit(i)
 }
 
 func isTruthy(object interface{}) bool {
@@ -104,21 +135,25 @@ func isEqual(left, right interface{}) bool {
 }
 
 func checkNumberOperand(operator Token, operand interface{}) float64 {
+	errmsg := "Operand must be number."
 	val, ok := operand.(float64)
 	if ok == true {
 		return val
 	}
-	RunTimeError(operator, "Operand must be number.")
-	panic("")
+
+	RuntimeError(operator, errmsg)
+	panic(errmsg)
 }
 
 func checkNumberOperands(operator Token, left interface{}, right interface{}) (float64, float64) {
+	errmsg := "Operands must be number."
 	lval, ok1 := left.(float64)
 	rval, ok2 := right.(float64)
 
 	if ok1 == true && ok2 == true {
 		return lval, rval
 	}
-	RunTimeError(operator, "Operands must be number.")
-	panic("")
+
+	RuntimeError(operator, errmsg)
+	panic(errmsg)
 }

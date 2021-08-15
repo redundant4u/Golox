@@ -1,9 +1,5 @@
 package lox
 
-import (
-	"fmt"
-)
-
 type Parser struct {
 	tokens   []Token
 	current  int
@@ -14,18 +10,45 @@ func NewParser(tokens []Token) *Parser {
 	return &Parser{tokens, 0, false}
 }
 
-func (p *Parser) Parse() []Expr {
-	var exprs []Expr
+func (p *Parser) Parse() []Stmt {
+	defer func() {
+		if r := recover(); r != nil {
+		}
+	}()
+
+	var statements []Stmt
 
 	for !p.isAtEnd() {
-		exprs = append(exprs, p.expression())
+		statements = append(statements, p.statement())
 	}
 
-	return exprs
+	return statements
 }
 
 func (p *Parser) expression() Expr {
 	return p.equality()
+}
+
+func (p *Parser) statement() Stmt {
+	if p.match(PRINT) {
+		return p.printStatement()
+	}
+
+	return p.expressionStatement()
+}
+
+func (p *Parser) printStatement() Stmt {
+	value := p.expression()
+	p.consume(SEMICOLON, "Expect ';' after value.")
+
+	return &Print{Expression: value}
+}
+
+func (p *Parser) expressionStatement() Stmt {
+	expr := p.expression()
+	p.consume(SEMICOLON, "Expect ';' after expression.")
+
+	return &Expression{Expression: expr}
 }
 
 func (p *Parser) equality() Expr {
@@ -101,11 +124,13 @@ func (p *Parser) primary() Expr {
 		p.consume(RIGHT_PAREN, "Expect ')' after expression.")
 		return &Grouping{Expression: expr}
 	default:
-		panic(fmt.Sprintf("%v: %v", p.peek(), "Expected expression."))
+		errmsg := "Expected expression."
+		ParseError(p.peek(), errmsg)
+		panic(errmsg)
 	}
 }
 
-func (p *Parser) match(types ...Type) bool {
+func (p *Parser) match(types ...TokenType) bool {
 	for _, tp := range types {
 		if p.check(tp) {
 			p.advance()
@@ -115,15 +140,16 @@ func (p *Parser) match(types ...Type) bool {
 	return false
 }
 
-func (p *Parser) consume(tp Type, message string) Token {
+func (p *Parser) consume(tp TokenType, errmsg string) Token {
 	if p.check(tp) {
 		return p.advance()
 	}
-	panic(fmt.Sprintf("%v: %v", p.peek(), message))
-	// return nil
+
+	ParseError(p.peek(), errmsg)
+	panic(errmsg)
 }
 
-func (p *Parser) check(tp Type) bool {
+func (p *Parser) check(tp TokenType) bool {
 	if p.isAtEnd() {
 		return false
 	}

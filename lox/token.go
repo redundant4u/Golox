@@ -2,10 +2,10 @@ package lox
 
 import "fmt"
 
-type Type int
+type TokenType int
 
 const (
-	NotAKeyword Type = iota
+	NotAKeyword TokenType = iota
 
 	// Single-character tokens
 	LEFT_PAREN
@@ -57,7 +57,7 @@ const (
 )
 
 type Token struct {
-	Type    Type
+	Type    TokenType
 	Lexeme  string
 	Literal interface{}
 	Line    int

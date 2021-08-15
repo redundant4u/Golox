@@ -12,7 +12,7 @@ type Scanner struct {
 	line    int
 }
 
-var keywords = map[string]Type{
+var keywords = map[string]TokenType{
 	"and":    AND,
 	"class":  CLASS,
 	"else":   ELSE,
@@ -31,9 +31,9 @@ var keywords = map[string]Type{
 	"while":  WHILE,
 }
 
-func NewScanner(source string) Scanner {
+func NewScanner(source string) *Scanner {
 	scanner := Scanner{source: source, line: 1, tokens: make([]Token, 0)}
-	return scanner
+	return &scanner
 }
 
 func (sc *Scanner) ScanTokens() []Token {
@@ -128,11 +128,11 @@ func (sc *Scanner) advance() byte {
 	return sc.source[sc.current-1]
 }
 
-func (sc *Scanner) addToken(t Type) {
+func (sc *Scanner) addToken(t TokenType) {
 	sc.addTokenWithLiteral(t, nil)
 }
 
-func (sc *Scanner) addTokenWithLiteral(t Type, literal interface{}) {
+func (sc *Scanner) addTokenWithLiteral(t TokenType, literal interface{}) {
 	lexeme := sc.source[sc.start:sc.current]
 	sc.tokens = append(sc.tokens, Token{Type: t, Lexeme: lexeme, Literal: literal, Line: sc.line})
 }

@@ -30,7 +30,7 @@ func runFile(file string) {
 	}
 
 	if hadRuntimeError {
-		os.Exit(79)
+		os.Exit(70)
 	}
 }
 
@@ -41,22 +41,22 @@ func runPrompt() {
 		dat, err := reader.ReadBytes('\n')
 		check(err)
 		run(string(dat))
-		hadError = false
+		// hadError = false
 	}
 }
 
 func run(src string) {
-	fmt.Println(src)
-
 	scanner := lox.NewScanner(src)
 	tokens := scanner.ScanTokens()
-	// parser := lox.NewParser(tokens)
-	// interpreter := lox.NewInterpreter()
+	parser := lox.NewParser(tokens)
+	statements := parser.Parse()
 
-	// interpreter.Interprete(parser.Parse())
-	for _, token := range tokens {
-		fmt.Println(token)
-	}
+	interpreter := lox.NewInterpreter()
+	interpreter.Interprete(statements)
+
+	// for _, token := range tokens {
+	// 	fmt.Println(token)
+	// }
 }
 
 func main() {

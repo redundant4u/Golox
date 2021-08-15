@@ -5,7 +5,8 @@ type Node interface {
 	VisitGroupingExpr(expr *Grouping) interface{}
 	VisitUnaryExpr(expr *Unary) interface{}
 	VisitLiteralExpr(expr *Literal) interface{}
-	// VisitExpressionStmt(stmt *Expression) interface{}
+	VisitExpressionStmt(stmt *Expression) interface{}
+	VisitPrintStmt(stmt *Print) interface{}
 }
 
 type Expr interface {
