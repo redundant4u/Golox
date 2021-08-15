@@ -63,10 +63,6 @@ type Token struct {
 	Line    int
 }
 
-func NewToken(t Type, lexeme string, literal interface{}, line int) *Token {
-	return &Token{t, lexeme, literal, line}
-}
-
-func (token *Token) String() string {
+func (token Token) String() string {
 	return fmt.Sprintf("%v\t|\t%v\t|\t%v", token.Type, token.Lexeme, token.Literal)
 }

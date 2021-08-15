@@ -9,7 +9,7 @@ func Error(line int, message string) {
 	report(line, "", message)
 }
 
-func ParseError(token *Token, message string) {
+func ParseError(token Token, message string) {
 	if token.Type == EOF {
 		report(token.Line, " at end", message)
 	} else {
@@ -17,11 +17,7 @@ func ParseError(token *Token, message string) {
 	}
 }
 
-func RunError(token *Token, num int) {
-	msg := "Operand must be a number."
-	if num == 1 {
-		msg = "Operands must be numbers."
-	}
+func RunTimeError(token Token, msg string) {
 	report(token.Line, "Runtime Panic", msg)
 }
 

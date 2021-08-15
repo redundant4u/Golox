@@ -5,12 +5,12 @@ import (
 )
 
 type Parser struct {
-	tokens   []*Token
+	tokens   []Token
 	current  int
 	hadError bool
 }
 
-func NewParser(tokens []*Token) *Parser {
+func NewParser(tokens []Token) *Parser {
 	return &Parser{tokens, 0, false}
 }
 
@@ -34,7 +34,7 @@ func (p *Parser) equality() Expr {
 	for p.match(BANG_EQUAL, EQUAL_EQUAL) {
 		operator := p.previous()
 		right := p.comparison()
-		expr = NewBinary(expr, operator, right)
+		expr = &Binary{Left: expr, Operator: operator, Right: right}
 	}
 
 	return expr
@@ -46,7 +46,7 @@ func (p *Parser) comparison() Expr {
 	for p.match(GREATER, GREATER_EQUAL, LESS, LESS_EQUAL) {
 		operator := p.previous()
 		right := p.term()
-		expr = NewBinary(expr, operator, right)
+		expr = &Binary{Left: expr, Operator: operator, Right: right}
 	}
 
 	return expr
@@ -58,7 +58,7 @@ func (p *Parser) term() Expr {
 	for p.match(MINUS, PLUS) {
 		operator := p.previous()
 		right := p.factor()
-		expr = NewBinary(expr, operator, right)
+		expr = &Binary{Left: expr, Operator: operator, Right: right}
 	}
 
 	return expr
@@ -70,7 +70,7 @@ func (p *Parser) factor() Expr {
 	for p.match(SLASH, STAR) {
 		operator := p.previous()
 		right := p.unary()
-		expr = NewBinary(expr, operator, right)
+		expr = &Binary{Left: expr, Operator: operator, Right: right}
 	}
 
 	return expr
@@ -80,7 +80,7 @@ func (p *Parser) unary() Expr {
 	if p.match(BANG, MINUS) {
 		operator := p.previous()
 		right := p.unary()
-		return NewUnary(operator, right)
+		return &Unary{Operator: operator, Right: right}
 	}
 
 	return p.primary()
@@ -89,17 +89,17 @@ func (p *Parser) unary() Expr {
 func (p *Parser) primary() Expr {
 	switch {
 	case p.match(FALSE):
-		return NewLiteral(false)
+		return &Literal{Value: false}
 	case p.match(TRUE):
-		return NewLiteral(true)
+		return &Literal{Value: true}
 	case p.match(NIL):
-		return NewLiteral(nil)
+		return &Literal{Value: nil}
 	case p.match(NUMBER, STRING):
-		return NewLiteral(p.previous().Literal)
+		return &Literal{Value: p.previous().Literal}
 	case p.match(LEFT_PAREN):
 		expr := p.expression()
 		p.consume(RIGHT_PAREN, "Expect ')' after expression.")
-		return NewGrouping(expr)
+		return &Grouping{Expression: expr}
 	default:
 		panic(fmt.Sprintf("%v: %v", p.peek(), "Expected expression."))
 	}
@@ -115,7 +115,7 @@ func (p *Parser) match(types ...Type) bool {
 	return false
 }
 
-func (p *Parser) consume(tp Type, message string) *Token {
+func (p *Parser) consume(tp Type, message string) Token {
 	if p.check(tp) {
 		return p.advance()
 	}
@@ -130,7 +130,7 @@ func (p *Parser) check(tp Type) bool {
 	return p.peek().Type == tp
 }
 
-func (p *Parser) advance() *Token {
+func (p *Parser) advance() Token {
 	if !p.isAtEnd() {
 		p.current++
 	}
@@ -141,11 +141,11 @@ func (p *Parser) isAtEnd() bool {
 	return p.peek().Type == EOF
 }
 
-func (p *Parser) peek() *Token {
+func (p *Parser) peek() Token {
 	return p.tokens[p.current]
 }
 
-func (p *Parser) previous() *Token {
+func (p *Parser) previous() Token {
 	return p.tokens[p.current-1]
 }
 

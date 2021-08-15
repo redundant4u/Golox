@@ -1,13 +1,12 @@
 package lox
 
 import (
-	"fmt"
 	"strconv"
 )
 
 type Scanner struct {
 	source  string
-	tokens  []*Token
+	tokens  []Token
 	start   int
 	current int
 	line    int
@@ -33,17 +32,17 @@ var keywords = map[string]Type{
 }
 
 func NewScanner(source string) Scanner {
-	scanner := Scanner{source: source, line: 1, tokens: make([]*Token, 0)}
+	scanner := Scanner{source: source, line: 1, tokens: make([]Token, 0)}
 	return scanner
 }
 
-func (sc *Scanner) ScanTokens() []*Token {
+func (sc *Scanner) ScanTokens() []Token {
 	for !sc.isAtEnd() {
 		sc.start = sc.current
 		sc.scanToken()
 	}
 
-	sc.tokens = append(sc.tokens, NewToken(EOF, "", nil, sc.line))
+	sc.tokens = append(sc.tokens, Token{Type: EOF, Line: sc.line})
 	return sc.tokens
 }
 
@@ -119,7 +118,7 @@ func (sc *Scanner) scanToken() {
 		} else if sc.isAlpha(c) {
 			sc.identifier()
 		} else {
-			Error(sc.line, fmt.Sprintf("Unexpected character: %c", c))
+			Error(sc.line, "Unexpected character")
 		}
 	}
 }
@@ -135,7 +134,7 @@ func (sc *Scanner) addToken(t Type) {
 
 func (sc *Scanner) addTokenWithLiteral(t Type, literal interface{}) {
 	lexeme := sc.source[sc.start:sc.current]
-	sc.tokens = append(sc.tokens, NewToken(t, lexeme, literal, sc.line))
+	sc.tokens = append(sc.tokens, Token{Type: t, Lexeme: lexeme, Literal: literal, Line: sc.line})
 }
 
 func (sc *Scanner) match(expected byte) bool {
@@ -228,5 +227,5 @@ func (sc *Scanner) identifier() {
 		t = IDENTIFIER
 	}
 
-	sc.tokens = append(sc.tokens, NewToken(t, lexeme, nil, sc.line))
+	sc.tokens = append(sc.tokens, Token{Type: t, Lexeme: lexeme, Line: sc.line})
 }
