@@ -3,6 +3,7 @@ package lox
 import "fmt"
 
 type Interpreter struct {
+	environment *Environment
 }
 
 func NewInterpreter() *Interpreter {
@@ -102,6 +103,30 @@ func (i *Interpreter) VisitPrintStmt(stmt *Print) interface{} {
 	fmt.Println(val)
 
 	return nil
+}
+
+func (i *Interpreter) VisitVarStmt(stmt *Var) interface{} {
+	var (
+		value interface{}
+	)
+
+	if stmt.Initializer != nil {
+		value = i.evaluate(stmt.Initializer)
+	}
+
+	i.environment.Define(stmt.Name.Lexeme, value)
+	return nil
+}
+
+func (i *Interpreter) VisitVariableExpr(expr *Variable) interface{} {
+	return i.environment.Get(expr.Name)
+}
+
+func (i *Interpreter) VisitAssignExpr(expr *Assign) interface{} {
+	value := i.evaluate(expr.Value)
+	i.environment.Assign(expr.Name, value)
+
+	return value
 }
 
 func (i *Interpreter) evaluate(expr Expr) interface{} {

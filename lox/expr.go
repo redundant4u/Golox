@@ -7,6 +7,9 @@ type Node interface {
 	VisitLiteralExpr(expr *Literal) interface{}
 	VisitExpressionStmt(stmt *Expression) interface{}
 	VisitPrintStmt(stmt *Print) interface{}
+	VisitVarStmt(stmt *Var) interface{}
+	VisitVariableExpr(expr *Variable) interface{}
+	VisitAssignExpr(expr *Assign) interface{}
 }
 
 type Expr interface {
@@ -41,6 +44,17 @@ type Unary struct {
 	Expr
 	Operator Token
 	Right    Expr
+}
+
+type Variable struct {
+	Expr
+	Name Token
+}
+
+type Assign struct {
+	Expr
+	Name  Token
+	Value Expr
 }
 
 func (expr *Binary) Visit(v Node) interface{} {
