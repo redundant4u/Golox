@@ -1,11 +1,11 @@
-package lox
+package token
 
 import "fmt"
 
-type TokenType int
+type Type int
 
 const (
-	NotAKeyword TokenType = iota
+	NotAKeyword Type = iota
 
 	// Single-character tokens
 	LEFT_PAREN
@@ -57,12 +57,21 @@ const (
 )
 
 type Token struct {
-	Type    TokenType
+	Type    Type
 	Lexeme  string
-	Literal interface{}
+	Literal any
 	Line    int
 }
 
-func (token Token) String() string {
-	return fmt.Sprintf("%v\t|\t%v\t|\t%v", token.Type, token.Lexeme, token.Literal)
+func New(t Type, lexeme string, literal any, line int) Token {
+	return Token{
+		Type:    t,
+		Lexeme:  lexeme,
+		Literal: literal,
+		Line:    line,
+	}
+}
+
+func (t Token) String() string {
+	return fmt.Sprintf("%v\t|\t%v\t|\t%v", t.Type, t.Lexeme, t.Literal)
 }

@@ -1,76 +1,66 @@
 package main
 
 import (
-	"Golox/lox"
 	"bufio"
-	"flag"
 	"fmt"
-	"io/ioutil"
 	"os"
+
+	"github.com/redundant4u/Golox/internal/scanner"
 )
 
-var (
-	hadError        = false
-	hadRuntimeError = false
-)
-
-func check(err error) {
+func errCheck(err error) {
 	if err != nil {
 		panic(err)
 	}
 }
 
-func runFile(file string) {
-	dat, err := ioutil.ReadFile(file)
-	check(err)
-	run(string(dat))
-
-	if hadError {
-		os.Exit(65)
+func runFile(path string) error {
+	bytes, err := os.ReadFile(path)
+	if err != nil {
+		return fmt.Errorf("Cloud not read file: %w", err)
 	}
 
-	if hadRuntimeError {
-		os.Exit(70)
-	}
+	return run(string(bytes))
 }
 
-func runPrompt() {
+func runPrompt() error {
 	reader := bufio.NewReader(os.Stdin)
+
 	for {
 		fmt.Print("> ")
-		dat, err := reader.ReadBytes('\n')
-		check(err)
-		run(string(dat))
-		// hadError = false
+		line, err := reader.ReadBytes('\n')
+		errCheck(err)
+
+		err = run(string(line))
+		errCheck(err)
 	}
 }
 
-func run(src string) {
-	scanner := lox.NewScanner(src)
-	tokens := scanner.ScanTokens()
-	parser := lox.NewParser(tokens)
-	statements := parser.Parse()
+func run(source string) error {
+	sc := scanner.New(source)
+	tokens, err := sc.ScanTokens()
+	errCheck(err)
 
-	interpreter := lox.NewInterpreter()
-	interpreter.Interprete(statements)
+	for _, token := range tokens {
+		fmt.Println(token)
+	}
 
-	// for _, token := range tokens {
-	// 	fmt.Println(token)
-	// }
+	return nil
 }
 
 func main() {
-	file := flag.String("file", "", "the script file to execute")
-	flag.Parse()
+	var err error
 
-	args := flag.Args()
+	fmt.Println(len(os.Args))
 
-	if len(args) > 1 {
-		fmt.Println("Usage: ./main [script]")
+	if len(os.Args) > 2 {
+		fmt.Println("Usage: go run main.go OR golox [script]")
 		os.Exit(64)
-	} else if len(args) == 1 {
-		runFile(*file)
+	} else if len(os.Args) == 2 {
+		err = runFile(os.Args[1])
 	} else {
-		runPrompt()
+		err = runPrompt()
 	}
+
+	errCheck(err)
 }
