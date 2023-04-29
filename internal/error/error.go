@@ -5,8 +5,8 @@ import (
 	"os"
 )
 
-func Error(line int, msg string) {
-	report(line, "", msg)
+func Error(line int, where string, msg string) {
+	report(line, where, msg)
 }
 
 func report(line int, where string, msg string) {
