@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/redundant4u/Golox/internal/ast"
+	"github.com/redundant4u/Golox/internal/parser"
 	"github.com/redundant4u/Golox/internal/scanner"
 )
 
@@ -17,7 +19,7 @@ func errCheck(err error) {
 func runFile(path string) error {
 	bytes, err := os.ReadFile(path)
 	if err != nil {
-		return fmt.Errorf("Cloud not read file: %w", err)
+		return fmt.Errorf("Colud not read file: %w", err)
 	}
 
 	return run(string(bytes))
@@ -41,9 +43,10 @@ func run(source string) error {
 	tokens, err := sc.ScanTokens()
 	errCheck(err)
 
-	for _, token := range tokens {
-		fmt.Println(token)
-	}
+	parser := parser.New(tokens)
+	expr := parser.Parse()
+
+	fmt.Println(ast.AstPrinter{}.Print(expr))
 
 	return nil
 }

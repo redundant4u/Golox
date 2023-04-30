@@ -97,13 +97,13 @@ func (sc *Scanner) scanToken() {
 			sc.addToken(token.EQUAL)
 		}
 	case '<':
-		if sc.match('<') {
+		if sc.match('=') {
 			sc.addToken(token.LESS_EQUAL)
 		} else {
 			sc.addToken(token.LESS)
 		}
 	case '>':
-		if sc.match('>') {
+		if sc.match('=') {
 			sc.addToken(token.GREATER_EQUAL)
 		} else {
 			sc.addToken(token.GREATER)
