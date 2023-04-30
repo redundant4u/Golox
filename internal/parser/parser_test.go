@@ -22,32 +22,32 @@ func runParser(t *testing.T, source string) ast.Expr {
 	return expr
 }
 
-func TestPrimary(t *testing.T) {
-	var checkLiteral = func(expr ast.Expr, value any) {
-		literal, ok := expr.(ast.Literal)
-		if ok != true {
-			t.Error("Expect type 'Literal'")
-		}
-
-		if literal.Value != value {
-			t.Errorf("Expect value to be %q, but got %q", value, literal.Value)
-		}
+func checkLiteral(t *testing.T, expr ast.Expr, value any) {
+	literal, ok := expr.(ast.Literal)
+	if ok != true {
+		t.Error("Expect type 'Literal'")
 	}
 
+	if literal.Value != value {
+		t.Errorf("Expect value to be %q, but got %q", value, literal.Value)
+	}
+}
+
+func TestPrimary(t *testing.T) {
 	expr := runParser(t, "\"This is a String\"")
-	checkLiteral(expr, "This is a String")
+	checkLiteral(t, expr, "This is a String")
 
 	expr = runParser(t, "60")
-	checkLiteral(expr, float64(60))
+	checkLiteral(t, expr, float64(60))
 
 	expr = runParser(t, "nil")
-	checkLiteral(expr, nil)
+	checkLiteral(t, expr, nil)
 
 	expr = runParser(t, "true")
-	checkLiteral(expr, true)
+	checkLiteral(t, expr, true)
 
 	expr = runParser(t, "false")
-	checkLiteral(expr, false)
+	checkLiteral(t, expr, false)
 
 }
 
@@ -68,28 +68,28 @@ func TestGrouping(t *testing.T) {
 	}
 }
 
-func TestUnary(t *testing.T) {
-	var checkUnary = func(expr ast.Expr, value any) {
-		unary, ok := expr.(ast.Unary)
-		if ok != true {
-			t.Errorf("Expect 'Unary'")
-		}
-
-		literal, ok := unary.Right.(ast.Literal)
-		if ok != true {
-			t.Errorf("Expect 'Literal'")
-		}
-
-		if literal.Value != value {
-			t.Errorf("Expect value to be %q, but got %q", value, literal.Value)
-		}
+func checkUnary(t *testing.T, expr ast.Expr, value any) {
+	unary, ok := expr.(ast.Unary)
+	if ok != true {
+		t.Errorf("Expect 'Unary'")
 	}
 
+	literal, ok := unary.Right.(ast.Literal)
+	if ok != true {
+		t.Errorf("Expect 'Literal'")
+	}
+
+	if literal.Value != value {
+		t.Errorf("Expect value to be %q, but got %q", value, literal.Value)
+	}
+}
+
+func TestUnary(t *testing.T) {
 	expr := runParser(t, "!true")
-	checkUnary(expr, true)
+	checkUnary(t, expr, true)
 
 	expr = runParser(t, "-1")
-	checkUnary(expr, float64(1))
+	checkUnary(t, expr, float64(1))
 }
 
 func checkArithmetics(t *testing.T, expr ast.Expr, tokenType token.Type, lValue, rValue any) {
