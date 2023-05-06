@@ -20,6 +20,15 @@ func New(tokens []token.Token) Parser {
 }
 
 func (p *Parser) Parse() ast.Expr {
+	defer func() {
+		if r := recover(); r != nil {
+			_, ok := r.(e.ParseError)
+			if !ok {
+				panic(r)
+			}
+		}
+	}()
+
 	return p.expression()
 }
 
@@ -210,8 +219,8 @@ func (p *Parser) panicError(t token.Token, msg string) {
 
 func (p *Parser) reportError(t token.Token, msg string) {
 	if t.Type == token.EOF {
-		e.Error(t.Line, " at end ", msg)
+		e.ReportError(t.Line, " at end ", msg)
 	} else {
-		e.Error(t.Line, " at '"+t.Lexeme+"' ", msg)
+		e.ReportError(t.Line, " at '"+t.Lexeme+"' ", msg)
 	}
 }
