@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/redundant4u/Golox/internal/ast"
+	"github.com/redundant4u/Golox/internal/interpreter"
 	"github.com/redundant4u/Golox/internal/parser"
 	"github.com/redundant4u/Golox/internal/scanner"
 )
@@ -46,7 +46,8 @@ func run(source string) error {
 	parser := parser.New(tokens)
 	expr := parser.Parse()
 
-	fmt.Println(ast.AstPrinter{}.Print(expr))
+	interpreter := interpreter.New()
+	interpreter.Interpret(expr)
 
 	return nil
 }
