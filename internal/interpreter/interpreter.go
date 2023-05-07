@@ -15,7 +15,7 @@ func New() Interpreter {
 	return Interpreter{}
 }
 
-func (i *Interpreter) Interpret(expr ast.Expr) {
+func (i *Interpreter) Interpret(expr ast.Expr) string {
 	defer func() {
 		if r := recover(); r != nil {
 			if err, ok := r.(e.RuntimeError); ok {
@@ -27,7 +27,7 @@ func (i *Interpreter) Interpret(expr ast.Expr) {
 	}()
 
 	value := i.evaluate(expr)
-	fmt.Println(stringify(value))
+	return stringify(value)
 }
 
 func (i *Interpreter) VisitLiteralExpr(expr ast.Literal) any {

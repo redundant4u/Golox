@@ -47,7 +47,9 @@ func run(source string) error {
 	expr := parser.Parse()
 
 	interpreter := interpreter.New()
-	interpreter.Interpret(expr)
+	result := interpreter.Interpret(expr)
+
+	fmt.Println(result)
 
 	return nil
 }
