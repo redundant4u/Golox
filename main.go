@@ -44,10 +44,10 @@ func run(source string) error {
 	errCheck(err)
 
 	parser := parser.New(tokens)
-	expr := parser.Parse()
+	stmts := parser.Parse()
 
 	interpreter := interpreter.New()
-	result := interpreter.Interpret(expr)
+	result := interpreter.Interpret(stmts)
 
 	fmt.Println(result)
 

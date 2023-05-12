@@ -3,10 +3,10 @@ package ast
 import "github.com/redundant4u/Golox/internal/token"
 
 type Expr interface {
-	Accept(v Visitor) any
+	Accept(v ExprVisitor) any
 }
 
-type Visitor interface {
+type ExprVisitor interface {
 	VisitBinaryExpr(expr Binary) any
 	VisitGroupingExpr(expr Grouping) any
 	VisitLiteralExpr(expr Literal) any
@@ -32,18 +32,18 @@ type Unary struct {
 	Right    Expr
 }
 
-func (expr Binary) Accept(v Visitor) any {
+func (expr Binary) Accept(v ExprVisitor) any {
 	return v.VisitBinaryExpr(expr)
 }
 
-func (expr Grouping) Accept(v Visitor) any {
+func (expr Grouping) Accept(v ExprVisitor) any {
 	return v.VisitGroupingExpr(expr)
 }
 
-func (expr Literal) Accept(v Visitor) any {
+func (expr Literal) Accept(v ExprVisitor) any {
 	return v.VisitLiteralExpr(expr)
 }
 
-func (expr Unary) Accept(v Visitor) any {
+func (expr Unary) Accept(v ExprVisitor) any {
 	return v.VisitUnaryExpr(expr)
 }
