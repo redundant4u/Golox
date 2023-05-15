@@ -53,6 +53,8 @@ func (sc *Scanner) ScanTokens() ([]token.Token, error) {
 		sc.scanToken()
 	}
 
+	sc.addToken(token.EOF)
+
 	return sc.tokens, nil
 }
 
@@ -183,6 +185,7 @@ func (sc *Scanner) string() {
 
 	if sc.isAtEnd() {
 		e.ReportError(sc.line, "", "Unterminated string")
+		return
 	}
 
 	sc.advance()
