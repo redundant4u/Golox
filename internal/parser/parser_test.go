@@ -1,10 +1,9 @@
-package parser_test
+package parser
 
 import (
 	"testing"
 
 	"github.com/redundant4u/Golox/internal/ast"
-	"github.com/redundant4u/Golox/internal/parser"
 	"github.com/redundant4u/Golox/internal/scanner"
 	"github.com/redundant4u/Golox/internal/token"
 )
@@ -16,8 +15,8 @@ func runParser(t *testing.T, source string) ast.Expr {
 		return nil
 	}
 
-	parser := parser.New(tokens)
-	expr := parser.Parse()
+	parser := New(tokens)
+	expr := parser.expression()
 
 	return expr
 }
