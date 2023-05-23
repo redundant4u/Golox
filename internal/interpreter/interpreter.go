@@ -154,14 +154,14 @@ func (i *Interpreter) executeBlock(statements []ast.Stmt, environment *env.Envir
 	previous := i.environment
 
 	defer func() {
-		i.environment = environment
-
-		for _, statement := range statements {
-			i.execute(statement)
-		}
+		i.environment = previous
 	}()
 
-	i.environment = previous
+	i.environment = environment
+
+	for _, statement := range statements {
+		i.execute(statement)
+	}
 }
 
 func (i *Interpreter) isTruthy(obj any) bool {
