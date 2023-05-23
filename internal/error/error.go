@@ -7,6 +7,9 @@ import (
 	"github.com/redundant4u/Golox/internal/token"
 )
 
+var HadError bool
+var HadRuntimeError bool
+
 type ParseError struct {
 	Message string
 }
@@ -18,10 +21,12 @@ type RuntimeError struct {
 
 func ReportError(line int, where string, msg string) {
 	report(line, where, msg)
+	HadError = true
 }
 
 func ReportRuntimeError(token token.Token, msg string) {
 	report(token.Line, "", msg)
+	HadRuntimeError = true
 }
 
 func report(line int, where string, msg string) {

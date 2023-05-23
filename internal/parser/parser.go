@@ -23,19 +23,54 @@ func (p *Parser) Parse() []ast.Stmt {
 	var statements []ast.Stmt
 
 	for !p.isAtEnd() {
-		statements = append(statements, p.statement())
+		statements = append(statements, p.declaration())
 	}
 
 	return statements
 }
 
 func (p *Parser) expression() ast.Expr {
-	return p.equality()
+	return p.assignment()
+}
+
+func (p *Parser) declaration() ast.Stmt {
+	recover := func() {
+		if r := recover(); r != nil {
+			_, ok := r.(e.ParseError)
+			if !ok {
+				panic(r)
+			}
+			p.synchronize()
+		}
+	}
+	defer recover()
+
+	if p.match(token.VAR) {
+		return p.varDeclaration()
+	}
+
+	return p.statement()
+}
+
+func (p *Parser) varDeclaration() ast.Stmt {
+	name := p.consume(token.IDENTIFIER, "Expect variable name.")
+
+	var initializer ast.Expr
+	if p.match(token.EQUAL) {
+		initializer = p.expression()
+	}
+
+	p.consume(token.SEMICOLON, "Expect ';' after variable declaration.")
+	return ast.Var{Name: name, Initializer: initializer}
 }
 
 func (p *Parser) statement() ast.Stmt {
 	if p.match(token.PRINT) {
 		return p.printStatement()
+	}
+
+	if p.match(token.LEFT_BRACE) {
+		return ast.Block{Statements: p.block()}
 	}
 
 	return p.expressionStatement()
@@ -50,9 +85,20 @@ func (p *Parser) printStatement() ast.Stmt {
 
 func (p *Parser) expressionStatement() ast.Stmt {
 	expr := p.expression()
-	p.consume(token.SEMICOLON, "Expect ';' after value.")
+	p.consume(token.SEMICOLON, "Expect ';' after expression.")
 
 	return ast.Expression{Expression: expr}
+}
+
+func (p *Parser) block() []ast.Stmt {
+	statements := []ast.Stmt{}
+
+	for !p.check(token.RIGHT_BRACE) && !p.isAtEnd() {
+		statements = append(statements, p.declaration())
+	}
+
+	p.consume(token.RIGHT_BRACE, "Expect '}' after block.")
+	return statements
 }
 
 func (p *Parser) equality() ast.Expr {
@@ -66,6 +112,24 @@ func (p *Parser) equality() ast.Expr {
 			Operator: operator,
 			Right:    right,
 		}
+	}
+
+	return expr
+}
+
+func (p *Parser) assignment() ast.Expr {
+	expr := p.equality()
+
+	if p.match(token.EQUAL) {
+		equals := p.previous()
+		value := p.assignment()
+
+		if expr, ok := expr.(ast.Variable); ok {
+			name := expr.Name
+			return ast.Assign{Name: name, Value: value}
+		}
+
+		p.panicError(equals, "Invalid assignment target.")
 	}
 
 	return expr
@@ -148,6 +212,10 @@ func (p *Parser) primary() ast.Expr {
 
 	if p.match(token.NUMBER, token.STRING) {
 		return ast.Literal{Value: p.previous().Literal}
+	}
+
+	if p.match(token.IDENTIFIER) {
+		return ast.Variable{Name: p.previous()}
 	}
 
 	if p.match(token.LEFT_PAREN) {
@@ -233,12 +301,12 @@ func (p *Parser) synchronize() {
 
 func (p *Parser) panicError(t token.Token, msg string) {
 	p.reportError(p.peek(), msg)
-	panic(msg)
+	panic(e.ParseError{Message: msg})
 }
 
 func (p *Parser) reportError(t token.Token, msg string) {
 	if t.Type == token.EOF {
-		e.ReportError(t.Line, " at end ", msg)
+		e.ReportError(t.Line, " at end", msg)
 	} else {
 		e.ReportError(t.Line, " at '"+t.Lexeme+"' ", msg)
 	}

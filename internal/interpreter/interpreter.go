@@ -5,21 +5,26 @@ import (
 	"strings"
 
 	"github.com/redundant4u/Golox/internal/ast"
-	e "github.com/redundant4u/Golox/internal/error"
+	env "github.com/redundant4u/Golox/internal/environment"
+	"github.com/redundant4u/Golox/internal/error"
 	"github.com/redundant4u/Golox/internal/token"
 )
 
-type Interpreter struct{}
+type Interpreter struct {
+	environment *env.Environment
+}
 
 func New() Interpreter {
-	return Interpreter{}
+	return Interpreter{
+		environment: env.New(nil),
+	}
 }
 
 func (i *Interpreter) Interpret(statements []ast.Stmt) string {
 	defer func() {
 		if r := recover(); r != nil {
-			if err, ok := r.(e.RuntimeError); ok {
-				e.ReportRuntimeError(err.Token, err.Message)
+			if err, ok := r.(error.RuntimeError); ok {
+				error.ReportRuntimeError(err.Token, err.Message)
 			} else {
 				panic(r)
 			}
@@ -54,6 +59,17 @@ func (i *Interpreter) VisitUnaryExpr(expr ast.Unary) any {
 	}
 
 	return nil
+}
+
+func (i *Interpreter) VisitVariableExpr(expr ast.Variable) any {
+	return i.environment.Get(expr.Name)
+}
+
+func (i *Interpreter) VisitAssignExpr(expr ast.Assign) any {
+	value := i.evaluate(expr.Value)
+	i.environment.Assign(expr.Name, value)
+
+	return value
 }
 
 func (i *Interpreter) VisitBinaryExpr(expr ast.Binary) any {
@@ -97,6 +113,11 @@ func (i *Interpreter) VisitBinaryExpr(expr ast.Binary) any {
 	return nil
 }
 
+func (i *Interpreter) VisitBlockStmt(stmt ast.Block) any {
+	i.executeBlock(stmt.Statements, env.New(i.environment))
+	return nil
+}
+
 func (i *Interpreter) VisitExpressionStmt(stmt ast.Expression) any {
 	i.evaluate(stmt.Expression)
 	return nil
@@ -109,12 +130,38 @@ func (i *Interpreter) VisitPrintStmt(stmt ast.Print) any {
 	return nil
 }
 
+func (i *Interpreter) VisitVarStmt(stmt ast.Var) any {
+	var value any
+
+	if stmt.Initializer != nil {
+		value = i.evaluate(stmt.Initializer)
+	}
+
+	i.environment.Define(stmt.Name.Lexeme, value)
+
+	return nil
+}
+
 func (i *Interpreter) evaluate(expr ast.Expr) any {
 	return expr.Accept(i)
 }
 
 func (i *Interpreter) execute(stmt ast.Stmt) any {
 	return stmt.Accept(i)
+}
+
+func (i *Interpreter) executeBlock(statements []ast.Stmt, environment *env.Environment) {
+	previous := i.environment
+
+	defer func() {
+		i.environment = environment
+
+		for _, statement := range statements {
+			i.execute(statement)
+		}
+	}()
+
+	i.environment = previous
 }
 
 func (i *Interpreter) isTruthy(obj any) bool {
@@ -148,7 +195,7 @@ func checkNumberOperand(operator token.Token, operand any) {
 	}
 
 	msg := "Operand must be a number."
-	e.ReportRuntimeError(operator, msg)
+	error.ReportRuntimeError(operator, msg)
 	panic(msg)
 }
 
@@ -161,7 +208,7 @@ func checkNumberOperands(operator token.Token, left any, right any) {
 	}
 
 	msg := "Operands must be numbers."
-	e.ReportRuntimeError(operator, msg)
+	error.ReportRuntimeError(operator, msg)
 	panic(msg)
 }
 
@@ -179,7 +226,7 @@ func checkNumberOrStringOperands(operator token.Token, left any, right any) bool
 	}
 
 	msg := "Operands must be two numbers or two strings."
-	e.ReportRuntimeError(operator, msg)
+	error.ReportRuntimeError(operator, msg)
 	panic(msg)
 }
 
