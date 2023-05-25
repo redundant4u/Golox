@@ -72,6 +72,22 @@ func (i *Interpreter) VisitAssignExpr(expr ast.Assign) any {
 	return value
 }
 
+func (i *Interpreter) VisitLogicalExpr(expr ast.Logical) any {
+	left := i.evaluate(expr.Left)
+
+	if expr.Operator.Type == token.OR {
+		if i.isTruthy(left) {
+			return left
+		}
+	} else {
+		if !i.isTruthy(left) {
+			return left
+		}
+	}
+
+	return i.evaluate(expr.Right)
+}
+
 func (i *Interpreter) VisitBinaryExpr(expr ast.Binary) any {
 	left := i.evaluate(expr.Left)
 	right := i.evaluate(expr.Right)
@@ -138,6 +154,24 @@ func (i *Interpreter) VisitVarStmt(stmt ast.Var) any {
 	}
 
 	i.environment.Define(stmt.Name.Lexeme, value)
+
+	return nil
+}
+
+func (i *Interpreter) VisitIfStmt(stmt ast.If) any {
+	if i.isTruthy(i.evaluate(stmt.Condition)) {
+		i.execute(stmt.ThenBranch)
+	} else if stmt.ElseBranch != nil {
+		i.execute(stmt.ElseBranch)
+	}
+
+	return nil
+}
+
+func (i *Interpreter) VisitWhileStmt(stmt ast.While) any {
+	for i.isTruthy(i.evaluate(stmt.Condition)) {
+		i.execute(stmt.Body)
+	}
 
 	return nil
 }
