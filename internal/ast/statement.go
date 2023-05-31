@@ -13,6 +13,7 @@ type StmtVisitor interface {
 	VisitVarStmt(stmt Var) any
 	VisitIfStmt(stmt If) any
 	VisitWhileStmt(stmt While) any
+	VisitFunctionStmt(stmt Function) any
 }
 
 type Block struct {
@@ -43,6 +44,12 @@ type While struct {
 	Body      Stmt
 }
 
+type Function struct {
+	Name   token.Token
+	Params []token.Token
+	Body   []Stmt
+}
+
 func (stmt Block) Accept(v StmtVisitor) any {
 	return v.VisitBlockStmt(stmt)
 }
@@ -65,4 +72,8 @@ func (stmt If) Accept(v StmtVisitor) any {
 
 func (stmt While) Accept(v StmtVisitor) any {
 	return v.VisitWhileStmt(stmt)
+}
+
+func (stmt Function) Accept(v StmtVisitor) any {
+	return v.VisitFunctionStmt(stmt)
 }

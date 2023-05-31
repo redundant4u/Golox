@@ -52,6 +52,21 @@ func (p AstPrinter) VisitLogicalExpr(expr Logical) any {
 	return p.parenthesize(expr.Operator.Lexeme, expr.Left, expr.Right)
 }
 
+func (p AstPrinter) VisitCallExpr(expr Call) any {
+	var builder strings.Builder
+
+	builder.WriteString("(")
+	builder.WriteString(expr.Callee.Accept(p).(string))
+
+	for _, argument := range expr.Arguments {
+		builder.WriteString(argument.Accept(p).(string))
+	}
+
+	builder.WriteString(")")
+
+	return builder.String()
+}
+
 func (p AstPrinter) VisitBlockStmt(stmt Block) any {
 	var builder strings.Builder
 
@@ -99,6 +114,17 @@ func (p AstPrinter) VisitWhileStmt(stmt While) any {
 	builder.WriteString(stmt.Condition.Accept(p).(string))
 	builder.WriteString(" ")
 	builder.WriteString(stmt.Body.Accept(p).(string))
+
+	return builder.String()
+}
+
+func (p AstPrinter) VisitFunctionStmt(stmt Function) any {
+	var builder strings.Builder
+
+	builder.WriteString("fun ")
+	builder.WriteString(stmt.Name.Lexeme)
+	builder.WriteString(" ")
+	builder.WriteString(stmt.Accept(p).(string))
 
 	return builder.String()
 }

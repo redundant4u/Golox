@@ -11,12 +11,17 @@ import (
 )
 
 type Interpreter struct {
+	Globals     *env.Environment
 	environment *env.Environment
 }
 
 func New() Interpreter {
+	globals := env.New(nil)
+	globals.Define("clock", Clock{})
+
 	return Interpreter{
-		environment: env.New(nil),
+		Globals:     globals,
+		environment: globals,
 	}
 }
 
@@ -86,6 +91,31 @@ func (i *Interpreter) VisitLogicalExpr(expr ast.Logical) any {
 	}
 
 	return i.evaluate(expr.Right)
+}
+
+func (i *Interpreter) VisitCallExpr(expr ast.Call) any {
+	callee := i.evaluate(expr.Callee)
+
+	var arguments []any
+	for _, argument := range expr.Arguments {
+		arguments = append(arguments, i.evaluate(argument))
+	}
+
+	panicMsg := "Can only call functions and classes."
+
+	if function, ok := callee.(Callable); ok {
+		if len(arguments) != function.Arity() {
+			panicMsg = fmt.Sprintf("Expected %d arguments but got %d.", function.Arity(), len(arguments))
+
+			error.ReportRuntimeError(expr.Paren, panicMsg)
+			panic(panicMsg)
+		}
+
+		return function.Call(i, arguments)
+	}
+
+	error.ReportRuntimeError(expr.Paren, panicMsg)
+	panic(panicMsg)
 }
 
 func (i *Interpreter) VisitBinaryExpr(expr ast.Binary) any {
@@ -173,6 +203,12 @@ func (i *Interpreter) VisitWhileStmt(stmt ast.While) any {
 		i.execute(stmt.Body)
 	}
 
+	return nil
+}
+
+func (i *Interpreter) VisitFunctionStmt(stmt ast.Function) any {
+	function := NewFunction(&stmt)
+	i.environment.Define(stmt.Name.Lexeme, function)
 	return nil
 }
 

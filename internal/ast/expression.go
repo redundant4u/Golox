@@ -14,12 +14,19 @@ type ExprVisitor interface {
 	VisitVariableExpr(expr Variable) any
 	VisitAssignExpr(expr Assign) any
 	VisitLogicalExpr(expr Logical) any
+	VisitCallExpr(expr Call) any
 }
 
 type Binary struct {
 	Left     Expr
 	Operator token.Token
 	Right    Expr
+}
+
+type Call struct {
+	Callee    Expr
+	Paren     token.Token
+	Arguments []Expr
 }
 
 type Grouping struct {
@@ -76,4 +83,8 @@ func (expr Assign) Accept(v ExprVisitor) any {
 
 func (expr Logical) Accept(v ExprVisitor) any {
 	return v.VisitLogicalExpr(expr)
+}
+
+func (expr Call) Accept(v ExprVisitor) any {
+	return v.VisitCallExpr(expr)
 }

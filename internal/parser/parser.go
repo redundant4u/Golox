@@ -1,7 +1,7 @@
 package parser
 
 import (
-	e "github.com/redundant4u/Golox/internal/error"
+	error "github.com/redundant4u/Golox/internal/error"
 
 	"github.com/redundant4u/Golox/internal/ast"
 	"github.com/redundant4u/Golox/internal/token"
@@ -36,7 +36,7 @@ func (p *Parser) expression() ast.Expr {
 func (p *Parser) declaration() ast.Stmt {
 	recover := func() {
 		if r := recover(); r != nil {
-			_, ok := r.(e.ParseError)
+			_, ok := r.(error.ParseError)
 			if !ok {
 				panic(r)
 			}
@@ -44,6 +44,10 @@ func (p *Parser) declaration() ast.Stmt {
 		}
 	}
 	defer recover()
+
+	if p.match(token.FUN) {
+		return p.function("function")
+	}
 
 	if p.match(token.VAR) {
 		return p.varDeclaration()
@@ -199,6 +203,37 @@ func (p *Parser) block() []ast.Stmt {
 	return statements
 }
 
+func (p *Parser) function(kind string) ast.Stmt {
+	name := p.consume(token.IDENTIFIER, "Expect "+kind+" name.")
+	p.consume(token.LEFT_PAREN, "Expect '(' after "+kind+" name.")
+
+	parameters := []token.Token{}
+
+	if !p.check(token.RIGHT_PAREN) {
+		for {
+			if len(parameters) >= 255 {
+				p.reportError(p.peek(), "Can't have more than 255 parameters.")
+			}
+
+			parameters = append(parameters, p.consume(token.IDENTIFIER, "Expect parameter name."))
+
+			if !p.match(token.COMMA) {
+				break
+			}
+		}
+	}
+	p.consume(token.RIGHT_PAREN, "Expect ')' after parameters.")
+
+	p.consume(token.LEFT_BRACE, "Expect '{' before "+kind+" body.")
+	body := p.block()
+
+	return ast.Function{
+		Name:   name,
+		Params: parameters,
+		Body:   body,
+	}
+}
+
 func (p *Parser) equality() ast.Expr {
 	expr := p.comparison()
 
@@ -324,7 +359,46 @@ func (p *Parser) unary() ast.Expr {
 		}
 	}
 
-	return p.primary()
+	return p.call()
+}
+
+func (p *Parser) call() ast.Expr {
+	expr := p.primary()
+
+	for {
+		if p.match(token.LEFT_PAREN) {
+			expr = p.finishCall(expr)
+		} else {
+			break
+		}
+	}
+
+	return expr
+}
+
+func (p *Parser) finishCall(callee ast.Expr) ast.Expr {
+	arguments := []ast.Expr{}
+	if !p.check(token.RIGHT_PAREN) {
+		for {
+			if len(arguments) >= 255 {
+				p.panicError(p.peek(), "Can't have more than 255 arguments.")
+			}
+
+			arguments = append(arguments, p.expression())
+
+			if !p.match(token.COMMA) {
+				break
+			}
+		}
+	}
+
+	paren := p.consume(token.RIGHT_PAREN, "Expect ')' after arguments.")
+
+	return ast.Call{
+		Callee:    callee,
+		Paren:     paren,
+		Arguments: arguments,
+	}
 }
 
 func (p *Parser) primary() ast.Expr {
@@ -431,13 +505,13 @@ func (p *Parser) synchronize() {
 
 func (p *Parser) panicError(t token.Token, msg string) {
 	p.reportError(p.peek(), msg)
-	panic(e.ParseError{Message: msg})
+	panic(error.ParseError{Message: msg})
 }
 
 func (p *Parser) reportError(t token.Token, msg string) {
 	if t.Type == token.EOF {
-		e.ReportError(t.Line, " at end", msg)
+		error.ReportError(t.Line, " at end", msg)
 	} else {
-		e.ReportError(t.Line, " at '"+t.Lexeme+"' ", msg)
+		error.ReportError(t.Line, " at '"+t.Lexeme+"' ", msg)
 	}
 }
