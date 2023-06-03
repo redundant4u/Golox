@@ -11,29 +11,42 @@ type Callable interface {
 }
 
 type Function struct {
-	declartion *ast.Function
+	declaration *ast.Function
+	clousure    *env.Environment
 }
 
-func NewFunction(declaration *ast.Function) *Function {
+func NewFunction(declaration *ast.Function, closure *env.Environment) *Function {
 	return &Function{
-		declartion: declaration,
+		declaration: declaration,
+		clousure:    closure,
 	}
 }
 
 func (f Function) Arity() int {
-	return len(f.declartion.Params)
+	return len(f.declaration.Params)
 }
 
-func (f Function) Call(interpreter *Interpreter, arguments []any) any {
-	environment := env.New(interpreter.Globals)
-	for i, param := range f.declartion.Params {
+func (f Function) Call(interpreter *Interpreter, arguments []any) (returnValue any) {
+	environment := env.New(f.clousure)
+	for i, param := range f.declaration.Params {
 		environment.Define(param.Lexeme, arguments[i])
 	}
 
-	interpreter.executeBlock(f.declartion.Body, environment)
-	return nil
+	defer func() {
+		if r := recover(); r != nil {
+			if err, ok := r.(Return); ok {
+				returnValue = err.Value
+			} else {
+				panic(r)
+			}
+		}
+	}()
+	interpreter.executeBlock(f.declaration.Body, environment)
+	returnValue = nil
+
+	return
 }
 
 func (f Function) String() string {
-	return "<fn " + f.declartion.Name.Lexeme + ">"
+	return "<fn " + f.declaration.Name.Lexeme + ">"
 }

@@ -15,6 +15,10 @@ type Interpreter struct {
 	environment *env.Environment
 }
 
+type Return struct {
+	Value any
+}
+
 func New() Interpreter {
 	globals := env.New(nil)
 	globals.Define("clock", Clock{})
@@ -207,9 +211,19 @@ func (i *Interpreter) VisitWhileStmt(stmt ast.While) any {
 }
 
 func (i *Interpreter) VisitFunctionStmt(stmt ast.Function) any {
-	function := NewFunction(&stmt)
+	function := NewFunction(&stmt, i.environment)
 	i.environment.Define(stmt.Name.Lexeme, function)
 	return nil
+}
+
+func (i *Interpreter) VisitReturnStmt(stmt ast.Return) any {
+	var value any
+	if stmt.Value != nil {
+		value = i.evaluate(stmt.Value)
+	}
+
+	msg := Return{value}
+	panic(msg)
 }
 
 func (i *Interpreter) evaluate(expr ast.Expr) any {

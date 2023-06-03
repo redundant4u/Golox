@@ -129,6 +129,17 @@ func (p AstPrinter) VisitFunctionStmt(stmt Function) any {
 	return builder.String()
 }
 
+func (p AstPrinter) VisitReturnStmt(stmt Return) any {
+	var builder strings.Builder
+
+	builder.WriteString("return ")
+	if stmt.Value != nil {
+		builder.WriteString(stmt.Value.Accept(p).(string))
+	}
+
+	return builder.String()
+}
+
 func (p AstPrinter) parenthesize(name string, exprs ...Expr) string {
 	var builder strings.Builder
 
