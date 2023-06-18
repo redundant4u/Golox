@@ -22,9 +22,9 @@ func runInterpreter(t *testing.T, code string) string {
 
 	var result any
 
-	printStmt, ok := statements[0].(ast.Print)
+	printStmt, ok := statements[0].(*ast.Print)
 	if !ok {
-		exprStmt, ok := statements[0].(ast.Expression)
+		exprStmt, ok := statements[0].(*ast.Expression)
 		if !ok {
 			t.Fatalf("Failed to interpret")
 		}

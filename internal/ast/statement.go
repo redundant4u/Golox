@@ -7,14 +7,14 @@ type Stmt interface {
 }
 
 type StmtVisitor interface {
-	VisitBlockStmt(stmt Block) any
-	VisitExpressionStmt(stmt Expression) any
-	VisitPrintStmt(stmt Print) any
-	VisitVarStmt(stmt Var) any
-	VisitIfStmt(stmt If) any
-	VisitWhileStmt(stmt While) any
-	VisitFunctionStmt(stmt Function) any
-	VisitReturnStmt(stmt Return) any
+	VisitBlockStmt(stmt *Block) any
+	VisitExpressionStmt(stmt *Expression) any
+	VisitPrintStmt(stmt *Print) any
+	VisitVarStmt(stmt *Var) any
+	VisitIfStmt(stmt *If) any
+	VisitWhileStmt(stmt *While) any
+	VisitFunctionStmt(stmt *Function) any
+	VisitReturnStmt(stmt *Return) any
 }
 
 type Block struct {
@@ -56,34 +56,34 @@ type Return struct {
 	Value   Expr
 }
 
-func (stmt Block) Accept(v StmtVisitor) any {
+func (stmt *Block) Accept(v StmtVisitor) any {
 	return v.VisitBlockStmt(stmt)
 }
 
-func (stmt Expression) Accept(v StmtVisitor) any {
+func (stmt *Expression) Accept(v StmtVisitor) any {
 	return v.VisitExpressionStmt(stmt)
 }
 
-func (stmt Print) Accept(v StmtVisitor) any {
+func (stmt *Print) Accept(v StmtVisitor) any {
 	return v.VisitPrintStmt(stmt)
 }
 
-func (stmt Var) Accept(v StmtVisitor) any {
+func (stmt *Var) Accept(v StmtVisitor) any {
 	return v.VisitVarStmt(stmt)
 }
 
-func (stmt If) Accept(v StmtVisitor) any {
+func (stmt *If) Accept(v StmtVisitor) any {
 	return v.VisitIfStmt(stmt)
 }
 
-func (stmt While) Accept(v StmtVisitor) any {
+func (stmt *While) Accept(v StmtVisitor) any {
 	return v.VisitWhileStmt(stmt)
 }
 
-func (stmt Function) Accept(v StmtVisitor) any {
+func (stmt *Function) Accept(v StmtVisitor) any {
 	return v.VisitFunctionStmt(stmt)
 }
 
-func (stmt Return) Accept(v StmtVisitor) any {
+func (stmt *Return) Accept(v StmtVisitor) any {
 	return v.VisitReturnStmt(stmt)
 }

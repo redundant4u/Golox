@@ -22,7 +22,7 @@ func runParser(t *testing.T, source string) ast.Expr {
 }
 
 func checkLiteral(t *testing.T, expr ast.Expr, value any) {
-	literal, ok := expr.(ast.Literal)
+	literal, ok := expr.(*ast.Literal)
 	if ok != true {
 		t.Error("Expect type 'Literal'")
 	}
@@ -52,12 +52,12 @@ func TestPrimary(t *testing.T) {
 
 func TestGrouping(t *testing.T) {
 	expr := runParser(t, "(60)")
-	grouping, ok := expr.(ast.Grouping)
+	grouping, ok := expr.(*ast.Grouping)
 	if ok != true {
 		t.Errorf("Expect a 'Grouping'")
 	}
 
-	literal, ok := grouping.Expression.(ast.Literal)
+	literal, ok := grouping.Expression.(*ast.Literal)
 	if ok != true {
 		t.Errorf("Expect a 'Literal'")
 	}
@@ -68,12 +68,12 @@ func TestGrouping(t *testing.T) {
 }
 
 func checkUnary(t *testing.T, expr ast.Expr, value any) {
-	unary, ok := expr.(ast.Unary)
+	unary, ok := expr.(*ast.Unary)
 	if ok != true {
 		t.Errorf("Expect 'Unary'")
 	}
 
-	literal, ok := unary.Right.(ast.Literal)
+	literal, ok := unary.Right.(*ast.Literal)
 	if ok != true {
 		t.Errorf("Expect 'Literal'")
 	}
@@ -92,13 +92,13 @@ func TestUnary(t *testing.T) {
 }
 
 func checkArithmetics(t *testing.T, expr ast.Expr, tokenType token.Type, lValue, rValue any) {
-	binary, ok := expr.(ast.Binary)
+	binary, ok := expr.(*ast.Binary)
 	if ok != true {
 		t.Errorf("Expect 'Binary'")
 	}
 
 	var checkOperand = func(operand ast.Expr, value any) {
-		literal, ok := operand.(ast.Literal)
+		literal, ok := operand.(*ast.Literal)
 		if ok != true {
 			t.Errorf("Expect 'Literal'")
 		}

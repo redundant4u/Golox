@@ -13,6 +13,7 @@ import (
 type Interpreter struct {
 	Globals     *env.Environment
 	environment *env.Environment
+	locals      map[ast.Expr]int
 }
 
 type Return struct {
@@ -26,6 +27,7 @@ func New() Interpreter {
 	return Interpreter{
 		Globals:     globals,
 		environment: globals,
+		locals:      make(map[ast.Expr]int),
 	}
 }
 
@@ -48,15 +50,15 @@ func (i *Interpreter) Interpret(statements []ast.Stmt) string {
 	return stringify(value)
 }
 
-func (i *Interpreter) VisitLiteralExpr(expr ast.Literal) any {
+func (i *Interpreter) VisitLiteralExpr(expr *ast.Literal) any {
 	return expr.Value
 }
 
-func (i *Interpreter) VisitGroupingExpr(expr ast.Grouping) any {
+func (i *Interpreter) VisitGroupingExpr(expr *ast.Grouping) any {
 	return i.evaluate(expr.Expression)
 }
 
-func (i *Interpreter) VisitUnaryExpr(expr ast.Unary) any {
+func (i *Interpreter) VisitUnaryExpr(expr *ast.Unary) any {
 	right := i.evaluate(expr.Right)
 
 	switch expr.Operator.Type {
@@ -70,18 +72,30 @@ func (i *Interpreter) VisitUnaryExpr(expr ast.Unary) any {
 	return nil
 }
 
-func (i *Interpreter) VisitVariableExpr(expr ast.Variable) any {
-	return i.environment.Get(expr.Name)
+func (i *Interpreter) VisitVariableExpr(expr *ast.Variable) any {
+	return i.lookUpVariable(expr.Name, expr)
 }
 
-func (i *Interpreter) VisitAssignExpr(expr ast.Assign) any {
+func (i *Interpreter) lookUpVariable(name token.Token, expr ast.Expr) any {
+	if distance, ok := i.locals[expr]; ok {
+		return i.environment.GetAt(distance, name.Lexeme)
+	}
+	return i.Globals.Get(name)
+}
+
+func (i *Interpreter) VisitAssignExpr(expr *ast.Assign) any {
 	value := i.evaluate(expr.Value)
-	i.environment.Assign(expr.Name, value)
+
+	if distance, ok := i.locals[expr]; ok {
+		i.environment.AssignAt(distance, expr.Name, value)
+	} else {
+		i.Globals.Assign(expr.Name, value)
+	}
 
 	return value
 }
 
-func (i *Interpreter) VisitLogicalExpr(expr ast.Logical) any {
+func (i *Interpreter) VisitLogicalExpr(expr *ast.Logical) any {
 	left := i.evaluate(expr.Left)
 
 	if expr.Operator.Type == token.OR {
@@ -97,7 +111,7 @@ func (i *Interpreter) VisitLogicalExpr(expr ast.Logical) any {
 	return i.evaluate(expr.Right)
 }
 
-func (i *Interpreter) VisitCallExpr(expr ast.Call) any {
+func (i *Interpreter) VisitCallExpr(expr *ast.Call) any {
 	callee := i.evaluate(expr.Callee)
 
 	var arguments []any
@@ -122,7 +136,7 @@ func (i *Interpreter) VisitCallExpr(expr ast.Call) any {
 	panic(panicMsg)
 }
 
-func (i *Interpreter) VisitBinaryExpr(expr ast.Binary) any {
+func (i *Interpreter) VisitBinaryExpr(expr *ast.Binary) any {
 	left := i.evaluate(expr.Left)
 	right := i.evaluate(expr.Right)
 
@@ -163,24 +177,24 @@ func (i *Interpreter) VisitBinaryExpr(expr ast.Binary) any {
 	return nil
 }
 
-func (i *Interpreter) VisitBlockStmt(stmt ast.Block) any {
+func (i *Interpreter) VisitBlockStmt(stmt *ast.Block) any {
 	i.executeBlock(stmt.Statements, env.New(i.environment))
 	return nil
 }
 
-func (i *Interpreter) VisitExpressionStmt(stmt ast.Expression) any {
+func (i *Interpreter) VisitExpressionStmt(stmt *ast.Expression) any {
 	i.evaluate(stmt.Expression)
 	return nil
 }
 
-func (i *Interpreter) VisitPrintStmt(stmt ast.Print) any {
+func (i *Interpreter) VisitPrintStmt(stmt *ast.Print) any {
 	value := i.evaluate(stmt.Expression)
 	fmt.Println(stringify(value))
 
 	return nil
 }
 
-func (i *Interpreter) VisitVarStmt(stmt ast.Var) any {
+func (i *Interpreter) VisitVarStmt(stmt *ast.Var) any {
 	var value any
 
 	if stmt.Initializer != nil {
@@ -192,7 +206,7 @@ func (i *Interpreter) VisitVarStmt(stmt ast.Var) any {
 	return nil
 }
 
-func (i *Interpreter) VisitIfStmt(stmt ast.If) any {
+func (i *Interpreter) VisitIfStmt(stmt *ast.If) any {
 	if i.isTruthy(i.evaluate(stmt.Condition)) {
 		i.execute(stmt.ThenBranch)
 	} else if stmt.ElseBranch != nil {
@@ -202,7 +216,7 @@ func (i *Interpreter) VisitIfStmt(stmt ast.If) any {
 	return nil
 }
 
-func (i *Interpreter) VisitWhileStmt(stmt ast.While) any {
+func (i *Interpreter) VisitWhileStmt(stmt *ast.While) any {
 	for i.isTruthy(i.evaluate(stmt.Condition)) {
 		i.execute(stmt.Body)
 	}
@@ -210,13 +224,13 @@ func (i *Interpreter) VisitWhileStmt(stmt ast.While) any {
 	return nil
 }
 
-func (i *Interpreter) VisitFunctionStmt(stmt ast.Function) any {
-	function := NewFunction(&stmt, i.environment)
+func (i *Interpreter) VisitFunctionStmt(stmt *ast.Function) any {
+	function := NewFunction(stmt, i.environment)
 	i.environment.Define(stmt.Name.Lexeme, function)
 	return nil
 }
 
-func (i *Interpreter) VisitReturnStmt(stmt ast.Return) any {
+func (i *Interpreter) VisitReturnStmt(stmt *ast.Return) any {
 	var value any
 	if stmt.Value != nil {
 		value = i.evaluate(stmt.Value)
@@ -232,6 +246,10 @@ func (i *Interpreter) evaluate(expr ast.Expr) any {
 
 func (i *Interpreter) execute(stmt ast.Stmt) any {
 	return stmt.Accept(i)
+}
+
+func (i *Interpreter) Resolve(expr ast.Expr, depth int) {
+	i.locals[expr] = depth
 }
 
 func (i *Interpreter) executeBlock(statements []ast.Stmt, environment *env.Environment) {
@@ -285,7 +303,7 @@ func checkNumberOperand(operator token.Token, operand any) {
 
 func checkNumberOperands(operator token.Token, left any, right any) {
 	_, leftOk := left.(float64)
-	_, rightOk := left.(float64)
+	_, rightOk := right.(float64)
 
 	if leftOk && rightOk {
 		return

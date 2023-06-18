@@ -65,7 +65,7 @@ func (p *Parser) varDeclaration() ast.Stmt {
 	}
 
 	p.consume(token.SEMICOLON, "Expect ';' after variable declaration.")
-	return ast.Var{Name: name, Initializer: initializer}
+	return &ast.Var{Name: name, Initializer: initializer}
 }
 
 func (p *Parser) statement() ast.Stmt {
@@ -90,7 +90,7 @@ func (p *Parser) statement() ast.Stmt {
 	}
 
 	if p.match(token.LEFT_BRACE) {
-		return ast.Block{Statements: p.block()}
+		return &ast.Block{Statements: p.block()}
 	}
 
 	return p.expressionStatement()
@@ -123,24 +123,24 @@ func (p *Parser) forStatement() ast.Stmt {
 	body := p.statement()
 
 	if increment != nil {
-		body = ast.Block{
+		body = &ast.Block{
 			Statements: []ast.Stmt{
 				body,
-				ast.Expression{Expression: increment},
+				&ast.Expression{Expression: increment},
 			},
 		}
 	}
 
 	if condition == nil {
-		condition = ast.Literal{Value: true}
+		condition = &ast.Literal{Value: true}
 	}
-	body = ast.While{
+	body = &ast.While{
 		Condition: condition,
 		Body:      body,
 	}
 
 	if initializer != nil {
-		body = ast.Block{
+		body = &ast.Block{
 			Statements: []ast.Stmt{
 				initializer,
 				body,
@@ -163,7 +163,7 @@ func (p *Parser) ifStatement() ast.Stmt {
 		elseBranch = p.statement()
 	}
 
-	return ast.If{
+	return &ast.If{
 		Condition:  condition,
 		ThenBranch: thenBranch,
 		ElseBranch: elseBranch,
@@ -174,7 +174,7 @@ func (p *Parser) printStatement() ast.Stmt {
 	value := p.expression()
 	p.consume(token.SEMICOLON, "Expect ';' after value.")
 
-	return ast.Print{Expression: value}
+	return &ast.Print{Expression: value}
 }
 
 func (p *Parser) returnStatement() ast.Stmt {
@@ -186,7 +186,7 @@ func (p *Parser) returnStatement() ast.Stmt {
 	}
 
 	p.consume(token.SEMICOLON, "Expect ';' after return value.")
-	return ast.Return{
+	return &ast.Return{
 		Keyword: keyword,
 		Value:   value,
 	}
@@ -198,7 +198,7 @@ func (p *Parser) whileStatement() ast.Stmt {
 	p.consume(token.RIGHT_PAREN, "Expect ')' after condition.")
 	body := p.statement()
 
-	return ast.While{
+	return &ast.While{
 		Condition: condition,
 		Body:      body,
 	}
@@ -208,7 +208,7 @@ func (p *Parser) expressionStatement() ast.Stmt {
 	expr := p.expression()
 	p.consume(token.SEMICOLON, "Expect ';' after expression.")
 
-	return ast.Expression{Expression: expr}
+	return &ast.Expression{Expression: expr}
 }
 
 func (p *Parser) block() []ast.Stmt {
@@ -246,7 +246,7 @@ func (p *Parser) function(kind string) ast.Stmt {
 	p.consume(token.LEFT_BRACE, "Expect '{' before "+kind+" body.")
 	body := p.block()
 
-	return ast.Function{
+	return &ast.Function{
 		Name:   name,
 		Params: parameters,
 		Body:   body,
@@ -259,7 +259,7 @@ func (p *Parser) equality() ast.Expr {
 	for p.match(token.BANG_EQUAL, token.EQUAL_EQUAL) {
 		operator := p.previous()
 		right := p.comparison()
-		expr = ast.Binary{
+		expr = &ast.Binary{
 			Left:     expr,
 			Operator: operator,
 			Right:    right,
@@ -276,9 +276,9 @@ func (p *Parser) assignment() ast.Expr {
 		equals := p.previous()
 		value := p.assignment()
 
-		if expr, ok := expr.(ast.Variable); ok {
+		if expr, ok := expr.(*ast.Variable); ok {
 			name := expr.Name
-			return ast.Assign{Name: name, Value: value}
+			return &ast.Assign{Name: name, Value: value}
 		}
 
 		p.panicError(equals, "Invalid assignment target.")
@@ -293,7 +293,7 @@ func (p *Parser) or() ast.Expr {
 	for p.match(token.OR) {
 		operator := p.previous()
 		right := p.and()
-		expr = ast.Logical{
+		expr = &ast.Logical{
 			Left:     expr,
 			Operator: operator,
 			Right:    right,
@@ -309,7 +309,7 @@ func (p *Parser) and() ast.Expr {
 	for p.match(token.AND) {
 		operator := p.previous()
 		right := p.equality()
-		expr = ast.Logical{
+		expr = &ast.Logical{
 			Left:     expr,
 			Operator: operator,
 			Right:    right,
@@ -325,7 +325,7 @@ func (p *Parser) comparison() ast.Expr {
 	for p.match(token.GREATER, token.GREATER_EQUAL, token.LESS, token.LESS_EQUAL) {
 		operator := p.previous()
 		right := p.term()
-		expr = ast.Binary{
+		expr = &ast.Binary{
 			Left:     expr,
 			Operator: operator,
 			Right:    right,
@@ -341,7 +341,7 @@ func (p *Parser) term() ast.Expr {
 	for p.match(token.MINUS, token.PLUS) {
 		operator := p.previous()
 		right := p.factor()
-		expr = ast.Binary{
+		expr = &ast.Binary{
 			Left:     expr,
 			Operator: operator,
 			Right:    right,
@@ -357,7 +357,7 @@ func (p *Parser) factor() ast.Expr {
 	for p.match(token.SLASH, token.STAR) {
 		operator := p.previous()
 		right := p.unary()
-		expr = ast.Binary{
+		expr = &ast.Binary{
 			Left:     expr,
 			Operator: operator,
 			Right:    right,
@@ -372,7 +372,7 @@ func (p *Parser) unary() ast.Expr {
 		operator := p.previous()
 		right := p.unary()
 
-		return ast.Unary{
+		return &ast.Unary{
 			Operator: operator,
 			Right:    right,
 		}
@@ -413,7 +413,7 @@ func (p *Parser) finishCall(callee ast.Expr) ast.Expr {
 
 	paren := p.consume(token.RIGHT_PAREN, "Expect ')' after arguments.")
 
-	return ast.Call{
+	return &ast.Call{
 		Callee:    callee,
 		Paren:     paren,
 		Arguments: arguments,
@@ -422,29 +422,29 @@ func (p *Parser) finishCall(callee ast.Expr) ast.Expr {
 
 func (p *Parser) primary() ast.Expr {
 	if p.match(token.FALSE) {
-		return ast.Literal{Value: false}
+		return &ast.Literal{Value: false}
 	}
 
 	if p.match(token.TRUE) {
-		return ast.Literal{Value: true}
+		return &ast.Literal{Value: true}
 	}
 
 	if p.match(token.NIL) {
-		return ast.Literal{Value: nil}
+		return &ast.Literal{Value: nil}
 	}
 
 	if p.match(token.NUMBER, token.STRING) {
-		return ast.Literal{Value: p.previous().Literal}
+		return &ast.Literal{Value: p.previous().Literal}
 	}
 
 	if p.match(token.IDENTIFIER) {
-		return ast.Variable{Name: p.previous()}
+		return &ast.Variable{Name: p.previous()}
 	}
 
 	if p.match(token.LEFT_PAREN) {
 		expr := p.expression()
 		p.consume(token.RIGHT_PAREN, "Expect ')' after expression.")
-		return ast.Grouping{Expression: expr}
+		return &ast.Grouping{Expression: expr}
 	}
 
 	p.panicError(p.peek(), "Expect expression.")

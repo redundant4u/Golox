@@ -7,14 +7,14 @@ type Expr interface {
 }
 
 type ExprVisitor interface {
-	VisitBinaryExpr(expr Binary) any
-	VisitGroupingExpr(expr Grouping) any
-	VisitLiteralExpr(expr Literal) any
-	VisitUnaryExpr(expr Unary) any
-	VisitVariableExpr(expr Variable) any
-	VisitAssignExpr(expr Assign) any
-	VisitLogicalExpr(expr Logical) any
-	VisitCallExpr(expr Call) any
+	VisitBinaryExpr(expr *Binary) any
+	VisitGroupingExpr(expr *Grouping) any
+	VisitLiteralExpr(expr *Literal) any
+	VisitUnaryExpr(expr *Unary) any
+	VisitVariableExpr(expr *Variable) any
+	VisitAssignExpr(expr *Assign) any
+	VisitLogicalExpr(expr *Logical) any
+	VisitCallExpr(expr *Call) any
 }
 
 type Binary struct {
@@ -57,34 +57,34 @@ type Logical struct {
 	Right    Expr
 }
 
-func (expr Binary) Accept(v ExprVisitor) any {
+func (expr *Binary) Accept(v ExprVisitor) any {
 	return v.VisitBinaryExpr(expr)
 }
 
-func (expr Grouping) Accept(v ExprVisitor) any {
+func (expr *Grouping) Accept(v ExprVisitor) any {
 	return v.VisitGroupingExpr(expr)
 }
 
-func (expr Literal) Accept(v ExprVisitor) any {
+func (expr *Literal) Accept(v ExprVisitor) any {
 	return v.VisitLiteralExpr(expr)
 }
 
-func (expr Unary) Accept(v ExprVisitor) any {
+func (expr *Unary) Accept(v ExprVisitor) any {
 	return v.VisitUnaryExpr(expr)
 }
 
-func (expr Variable) Accept(v ExprVisitor) any {
+func (expr *Variable) Accept(v ExprVisitor) any {
 	return v.VisitVariableExpr(expr)
 }
 
-func (expr Assign) Accept(v ExprVisitor) any {
+func (expr *Assign) Accept(v ExprVisitor) any {
 	return v.VisitAssignExpr(expr)
 }
 
-func (expr Logical) Accept(v ExprVisitor) any {
+func (expr *Logical) Accept(v ExprVisitor) any {
 	return v.VisitLogicalExpr(expr)
 }
 
-func (expr Call) Accept(v ExprVisitor) any {
+func (expr *Call) Accept(v ExprVisitor) any {
 	return v.VisitCallExpr(expr)
 }

@@ -9,6 +9,7 @@ import (
 	e "github.com/redundant4u/Golox/internal/error"
 	"github.com/redundant4u/Golox/internal/interpreter"
 	"github.com/redundant4u/Golox/internal/parser"
+	"github.com/redundant4u/Golox/internal/resolver"
 	"github.com/redundant4u/Golox/internal/scanner"
 )
 
@@ -18,12 +19,15 @@ func runFile(path string) error {
 		return fmt.Errorf("Colud not read file: %w", err)
 	}
 
-	_ = run(string(bytes))
+	interpreter := interpreter.New()
+
+	_ = run(&interpreter, string(bytes))
 
 	return nil
 }
 
 func runPrompt() error {
+	interpreter := interpreter.New()
 	reader := bufio.NewReader(os.Stdin)
 
 	for {
@@ -35,7 +39,7 @@ func runPrompt() error {
 			return fmt.Errorf("Could not read line: %w", err)
 		}
 
-		err = run(string(line))
+		err = run(&interpreter, string(line))
 		if err != nil {
 			return fmt.Errorf("%w", err)
 		}
@@ -44,7 +48,7 @@ func runPrompt() error {
 	return nil
 }
 
-func run(source string) error {
+func run(interpreter *interpreter.Interpreter, source string) error {
 	sc := scanner.New(source)
 	tokens, err := sc.ScanTokens()
 	if err != nil {
@@ -57,7 +61,13 @@ func run(source string) error {
 		return fmt.Errorf("Failed to parse tokens")
 	}
 
-	interpreter := interpreter.New()
+	resolver := resolver.New(interpreter)
+	resolver.Resolve(statements)
+
+	if e.HadError {
+		return fmt.Errorf("Failed to resolve")
+	}
+
 	interpreter.Interpret(statements)
 
 	return nil

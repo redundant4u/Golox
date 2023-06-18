@@ -20,15 +20,15 @@ func (p AstPrinter) Print(statements []Stmt) string {
 	return result
 }
 
-func (p AstPrinter) VisitBinaryExpr(expr Binary) any {
+func (p AstPrinter) VisitBinaryExpr(expr *Binary) any {
 	return p.parenthesize(expr.Operator.Lexeme, expr.Left, expr.Right)
 }
 
-func (p AstPrinter) VisitGroupingExpr(expr Grouping) any {
+func (p AstPrinter) VisitGroupingExpr(expr *Grouping) any {
 	return p.parenthesize("group", expr.Expression)
 }
 
-func (p AstPrinter) VisitLiteralExpr(expr Literal) any {
+func (p AstPrinter) VisitLiteralExpr(expr *Literal) any {
 	if expr.Value == nil {
 		return "nil"
 	}
@@ -36,23 +36,23 @@ func (p AstPrinter) VisitLiteralExpr(expr Literal) any {
 	return fmt.Sprint(expr.Value)
 }
 
-func (p AstPrinter) VisitUnaryExpr(expr Unary) any {
+func (p AstPrinter) VisitUnaryExpr(expr *Unary) any {
 	return p.parenthesize(expr.Operator.Lexeme, expr.Right)
 }
 
-func (p AstPrinter) VisitVariableExpr(expr Variable) any {
+func (p AstPrinter) VisitVariableExpr(expr *Variable) any {
 	return expr.Name.Lexeme
 }
 
-func (p AstPrinter) VisitAssignExpr(expr Assign) any {
+func (p AstPrinter) VisitAssignExpr(expr *Assign) any {
 	return p.parenthesize("= "+expr.Name.Lexeme, expr.Value)
 }
 
-func (p AstPrinter) VisitLogicalExpr(expr Logical) any {
+func (p AstPrinter) VisitLogicalExpr(expr *Logical) any {
 	return p.parenthesize(expr.Operator.Lexeme, expr.Left, expr.Right)
 }
 
-func (p AstPrinter) VisitCallExpr(expr Call) any {
+func (p AstPrinter) VisitCallExpr(expr *Call) any {
 	var builder strings.Builder
 
 	builder.WriteString("(")
@@ -67,7 +67,7 @@ func (p AstPrinter) VisitCallExpr(expr Call) any {
 	return builder.String()
 }
 
-func (p AstPrinter) VisitBlockStmt(stmt Block) any {
+func (p AstPrinter) VisitBlockStmt(stmt *Block) any {
 	var builder strings.Builder
 
 	builder.WriteString("{")
@@ -79,19 +79,19 @@ func (p AstPrinter) VisitBlockStmt(stmt Block) any {
 	return builder.String()
 }
 
-func (p AstPrinter) VisitExpressionStmt(stmt Expression) any {
+func (p AstPrinter) VisitExpressionStmt(stmt *Expression) any {
 	return p.parenthesize(";", stmt.Expression)
 }
 
-func (p AstPrinter) VisitPrintStmt(stmt Print) any {
+func (p AstPrinter) VisitPrintStmt(stmt *Print) any {
 	return p.parenthesize("print", stmt.Expression)
 }
 
-func (p AstPrinter) VisitVarStmt(stmt Var) any {
+func (p AstPrinter) VisitVarStmt(stmt *Var) any {
 	return p.parenthesize("var "+stmt.Name.Lexeme, stmt.Initializer)
 }
 
-func (p AstPrinter) VisitIfStmt(stmt If) any {
+func (p AstPrinter) VisitIfStmt(stmt *If) any {
 	var builder strings.Builder
 
 	builder.WriteString("if ")
@@ -107,7 +107,7 @@ func (p AstPrinter) VisitIfStmt(stmt If) any {
 	return builder.String()
 }
 
-func (p AstPrinter) VisitWhileStmt(stmt While) any {
+func (p AstPrinter) VisitWhileStmt(stmt *While) any {
 	var builder strings.Builder
 
 	builder.WriteString("while ")
@@ -118,7 +118,7 @@ func (p AstPrinter) VisitWhileStmt(stmt While) any {
 	return builder.String()
 }
 
-func (p AstPrinter) VisitFunctionStmt(stmt Function) any {
+func (p AstPrinter) VisitFunctionStmt(stmt *Function) any {
 	var builder strings.Builder
 
 	builder.WriteString("fun ")
@@ -129,7 +129,7 @@ func (p AstPrinter) VisitFunctionStmt(stmt Function) any {
 	return builder.String()
 }
 
-func (p AstPrinter) VisitReturnStmt(stmt Return) any {
+func (p AstPrinter) VisitReturnStmt(stmt *Return) any {
 	var builder strings.Builder
 
 	builder.WriteString("return ")
