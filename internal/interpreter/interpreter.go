@@ -6,12 +6,12 @@ import (
 
 	"github.com/redundant4u/Golox/internal/ast"
 	env "github.com/redundant4u/Golox/internal/environment"
-	"github.com/redundant4u/Golox/internal/error"
+	e "github.com/redundant4u/Golox/internal/error"
 	"github.com/redundant4u/Golox/internal/token"
 )
 
 type Interpreter struct {
-	Globals     *env.Environment
+	globals     *env.Environment
 	environment *env.Environment
 	locals      map[ast.Expr]int
 }
@@ -25,7 +25,7 @@ func New() Interpreter {
 	globals.Define("clock", Clock{})
 
 	return Interpreter{
-		Globals:     globals,
+		globals:     globals,
 		environment: globals,
 		locals:      make(map[ast.Expr]int),
 	}
@@ -34,8 +34,8 @@ func New() Interpreter {
 func (i *Interpreter) Interpret(statements []ast.Stmt) string {
 	defer func() {
 		if r := recover(); r != nil {
-			if err, ok := r.(error.RuntimeError); ok {
-				error.ReportRuntimeError(err.Token, err.Message)
+			if err, ok := r.(e.RuntimeError); ok {
+				e.ReportRuntimeError(err.Token, err.Message)
 			} else {
 				panic(r)
 			}
@@ -80,7 +80,7 @@ func (i *Interpreter) lookUpVariable(name token.Token, expr ast.Expr) any {
 	if distance, ok := i.locals[expr]; ok {
 		return i.environment.GetAt(distance, name.Lexeme)
 	}
-	return i.Globals.Get(name)
+	return i.globals.Get(name)
 }
 
 func (i *Interpreter) VisitAssignExpr(expr *ast.Assign) any {
@@ -89,7 +89,7 @@ func (i *Interpreter) VisitAssignExpr(expr *ast.Assign) any {
 	if distance, ok := i.locals[expr]; ok {
 		i.environment.AssignAt(distance, expr.Name, value)
 	} else {
-		i.Globals.Assign(expr.Name, value)
+		i.globals.Assign(expr.Name, value)
 	}
 
 	return value
@@ -125,14 +125,38 @@ func (i *Interpreter) VisitCallExpr(expr *ast.Call) any {
 		if len(arguments) != function.Arity() {
 			panicMsg = fmt.Sprintf("Expected %d arguments but got %d.", function.Arity(), len(arguments))
 
-			error.ReportRuntimeError(expr.Paren, panicMsg)
+			e.ReportRuntimeError(expr.Paren, panicMsg)
 			panic(panicMsg)
 		}
 
 		return function.Call(i, arguments)
 	}
 
-	error.ReportRuntimeError(expr.Paren, panicMsg)
+	e.ReportRuntimeError(expr.Paren, panicMsg)
+	panic(panicMsg)
+}
+
+func (i *Interpreter) VisitGetExpr(expr *ast.Get) any {
+	object := i.evaluate(expr.Object)
+	if instance, ok := object.(*Instance); ok {
+		return instance.Get(expr.Name)
+	}
+
+	panicMsg := "Only instances have properties."
+	e.ReportRuntimeError(expr.Name, panicMsg)
+	panic(panicMsg)
+}
+
+func (i *Interpreter) VisitSetExpr(expr *ast.Set) any {
+	object := i.evaluate(expr.Object)
+
+	if instance, ok := object.(*Instance); ok {
+		value := i.evaluate(expr.Value)
+		instance.Set(expr.Name, value)
+	}
+
+	panicMsg := "Only instances have fields."
+	e.ReportRuntimeError(expr.Name, panicMsg)
 	panic(panicMsg)
 }
 
@@ -240,6 +264,20 @@ func (i *Interpreter) VisitReturnStmt(stmt *ast.Return) any {
 	panic(msg)
 }
 
+func (i *Interpreter) VisitClassStmt(stmt *ast.Class) any {
+	i.environment.Define(stmt.Name.Lexeme, nil)
+
+	methods := make(map[string]*Function)
+	for _, method := range stmt.Methods {
+		function := NewFunction(method, i.environment)
+		methods[method.Name.Lexeme] = function
+	}
+
+	class := NewClass(stmt.Name.Lexeme, methods)
+	i.environment.Assign(stmt.Name, class)
+	return nil
+}
+
 func (i *Interpreter) evaluate(expr ast.Expr) any {
 	return expr.Accept(i)
 }
@@ -297,7 +335,7 @@ func checkNumberOperand(operator token.Token, operand any) {
 	}
 
 	msg := "Operand must be a number."
-	error.ReportRuntimeError(operator, msg)
+	e.ReportRuntimeError(operator, msg)
 	panic(msg)
 }
 
@@ -310,7 +348,7 @@ func checkNumberOperands(operator token.Token, left any, right any) {
 	}
 
 	msg := "Operands must be numbers."
-	error.ReportRuntimeError(operator, msg)
+	e.ReportRuntimeError(operator, msg)
 	panic(msg)
 }
 
@@ -328,7 +366,7 @@ func checkNumberOrStringOperands(operator token.Token, left any, right any) bool
 	}
 
 	msg := "Operands must be two numbers or two strings."
-	error.ReportRuntimeError(operator, msg)
+	e.ReportRuntimeError(operator, msg)
 	panic(msg)
 }
 

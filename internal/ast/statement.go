@@ -15,6 +15,7 @@ type StmtVisitor interface {
 	VisitWhileStmt(stmt *While) any
 	VisitFunctionStmt(stmt *Function) any
 	VisitReturnStmt(stmt *Return) any
+	VisitClassStmt(stmt *Class) any
 }
 
 type Block struct {
@@ -56,6 +57,11 @@ type Return struct {
 	Value   Expr
 }
 
+type Class struct {
+	Name    token.Token
+	Methods []*Function
+}
+
 func (stmt *Block) Accept(v StmtVisitor) any {
 	return v.VisitBlockStmt(stmt)
 }
@@ -86,4 +92,8 @@ func (stmt *Function) Accept(v StmtVisitor) any {
 
 func (stmt *Return) Accept(v StmtVisitor) any {
 	return v.VisitReturnStmt(stmt)
+}
+
+func (stmt *Class) Accept(v StmtVisitor) any {
+	return v.VisitClassStmt(stmt)
 }

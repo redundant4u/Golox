@@ -22,11 +22,11 @@ func NewFunction(declaration *ast.Function, closure *env.Environment) *Function 
 	}
 }
 
-func (f Function) Arity() int {
+func (f *Function) Arity() int {
 	return len(f.declaration.Params)
 }
 
-func (f Function) Call(interpreter *Interpreter, arguments []any) (returnValue any) {
+func (f *Function) Call(interpreter *Interpreter, arguments []any) (returnValue any) {
 	environment := env.New(f.clousure)
 	for i, param := range f.declaration.Params {
 		environment.Define(param.Lexeme, arguments[i])
@@ -47,6 +47,6 @@ func (f Function) Call(interpreter *Interpreter, arguments []any) (returnValue a
 	return
 }
 
-func (f Function) String() string {
+func (f *Function) String() string {
 	return "<fn " + f.declaration.Name.Lexeme + ">"
 }

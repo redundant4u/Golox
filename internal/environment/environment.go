@@ -1,7 +1,7 @@
 package environment
 
 import (
-	"github.com/redundant4u/Golox/internal/error"
+	e "github.com/redundant4u/Golox/internal/error"
 	"github.com/redundant4u/Golox/internal/token"
 )
 
@@ -17,48 +17,48 @@ func New(enclosing *Environment) *Environment {
 	}
 }
 
-func (e *Environment) Define(name string, value any) {
-	e.values[name] = value
+func (env *Environment) Define(name string, value any) {
+	env.values[name] = value
 }
 
-func (e *Environment) ancestor(distance int) *Environment {
-	environment := e
+func (env *Environment) ancestor(distance int) *Environment {
+	environment := env
 	for i := 0; i < distance; i++ {
 		environment = environment.enclosing
 	}
 	return environment
 }
 
-func (e *Environment) GetAt(distance int, lexeme string) any {
-	return e.ancestor(distance).values[lexeme]
+func (env *Environment) GetAt(distance int, lexeme string) any {
+	return env.ancestor(distance).values[lexeme]
 }
 
-func (e *Environment) Get(name token.Token) any {
-	if value, ok := e.values[name.Lexeme]; ok {
+func (env *Environment) Get(name token.Token) any {
+	if value, ok := env.values[name.Lexeme]; ok {
 		return value
 	}
 
-	if e.enclosing != nil {
-		return e.enclosing.Get(name)
+	if env.enclosing != nil {
+		return env.enclosing.Get(name)
 	}
 
-	panic(error.RuntimeError{Token: name, Message: "Undefined variable '" + name.Lexeme + "'."})
+	panic(e.RuntimeError{Token: name, Message: "Undefined variable '" + name.Lexeme + "'."})
 }
 
-func (e *Environment) AssignAt(distance int, name token.Token, value any) {
-	e.ancestor(distance).values[name.Lexeme] = value
+func (env *Environment) AssignAt(distance int, name token.Token, value any) {
+	env.ancestor(distance).values[name.Lexeme] = value
 }
 
-func (e *Environment) Assign(name token.Token, value any) {
-	if _, ok := e.values[name.Lexeme]; ok {
-		e.values[name.Lexeme] = value
+func (env *Environment) Assign(name token.Token, value any) {
+	if _, ok := env.values[name.Lexeme]; ok {
+		env.values[name.Lexeme] = value
 		return
 	}
 
-	if e.enclosing != nil {
-		e.enclosing.Assign(name, value)
+	if env.enclosing != nil {
+		env.enclosing.Assign(name, value)
 		return
 	}
 
-	panic(error.RuntimeError{Token: name, Message: "Undefined variable '" + name.Lexeme + "'."})
+	panic(e.RuntimeError{Token: name, Message: "Undefined variable '" + name.Lexeme + "'."})
 }

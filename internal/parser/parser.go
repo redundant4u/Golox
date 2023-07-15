@@ -1,7 +1,7 @@
 package parser
 
 import (
-	error "github.com/redundant4u/Golox/internal/error"
+	e "github.com/redundant4u/Golox/internal/error"
 
 	"github.com/redundant4u/Golox/internal/ast"
 	"github.com/redundant4u/Golox/internal/token"
@@ -36,7 +36,7 @@ func (p *Parser) expression() ast.Expr {
 func (p *Parser) declaration() ast.Stmt {
 	recover := func() {
 		if r := recover(); r != nil {
-			_, ok := r.(error.ParseError)
+			_, ok := r.(e.ParseError)
 			if !ok {
 				panic(r)
 			}
@@ -44,6 +44,10 @@ func (p *Parser) declaration() ast.Stmt {
 		}
 	}
 	defer recover()
+
+	if p.match(token.CLASS) {
+		return p.classDeclartion()
+	}
 
 	if p.match(token.FUN) {
 		return p.function("function")
@@ -54,6 +58,20 @@ func (p *Parser) declaration() ast.Stmt {
 	}
 
 	return p.statement()
+}
+
+func (p *Parser) classDeclartion() ast.Stmt {
+	name := p.consume(token.IDENTIFIER, "Expect class name.")
+	p.consume(token.LEFT_BRACE, "Expect '{' before class body.")
+
+	var methods []*ast.Function
+	for !p.check(token.RIGHT_BRACE) && !p.isAtEnd() {
+		methods = append(methods, p.function("method"))
+	}
+
+	p.consume(token.RIGHT_BRACE, "Expect '}' after class body.")
+
+	return &ast.Class{Name: name, Methods: methods}
 }
 
 func (p *Parser) varDeclaration() ast.Stmt {
@@ -222,7 +240,7 @@ func (p *Parser) block() []ast.Stmt {
 	return statements
 }
 
-func (p *Parser) function(kind string) ast.Stmt {
+func (p *Parser) function(kind string) *ast.Function {
 	name := p.consume(token.IDENTIFIER, "Expect "+kind+" name.")
 	p.consume(token.LEFT_PAREN, "Expect '(' after "+kind+" name.")
 
@@ -276,9 +294,13 @@ func (p *Parser) assignment() ast.Expr {
 		equals := p.previous()
 		value := p.assignment()
 
-		if expr, ok := expr.(*ast.Variable); ok {
-			name := expr.Name
+		if variable, ok := expr.(*ast.Variable); ok {
+			name := variable.Name
 			return &ast.Assign{Name: name, Value: value}
+		} else if get, ok := expr.(*ast.Get); ok {
+			object := get.Object
+			name := get.Name
+			return &ast.Get{Object: object, Name: name}
 		}
 
 		p.panicError(equals, "Invalid assignment target.")
@@ -387,6 +409,9 @@ func (p *Parser) call() ast.Expr {
 	for {
 		if p.match(token.LEFT_PAREN) {
 			expr = p.finishCall(expr)
+		} else if p.match(token.DOT) {
+			name := p.consume(token.IDENTIFIER, "Expect property name after '.'.")
+			expr = &ast.Get{Object: expr, Name: name}
 		} else {
 			break
 		}
@@ -524,13 +549,13 @@ func (p *Parser) synchronize() {
 
 func (p *Parser) panicError(t token.Token, msg string) {
 	p.reportError(p.peek(), msg)
-	panic(error.ParseError{Message: msg})
+	panic(e.ParseError{Message: msg})
 }
 
 func (p *Parser) reportError(t token.Token, msg string) {
 	if t.Type == token.EOF {
-		error.ReportError(t.Line, " at end", msg)
+		e.ReportError(t.Line, " at end", msg)
 	} else {
-		error.ReportError(t.Line, " at '"+t.Lexeme+"' ", msg)
+		e.ReportError(t.Line, " at '"+t.Lexeme+"' ", msg)
 	}
 }
