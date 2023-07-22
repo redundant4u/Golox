@@ -11,7 +11,10 @@ type Instance struct {
 }
 
 func NewInstance(class *Class) *Instance {
-	return &Instance{class: class}
+	return &Instance{
+		class:  class,
+		fields: make(map[string]any),
+	}
 }
 
 func (i *Instance) Get(name token.Token) any {
@@ -21,10 +24,10 @@ func (i *Instance) Get(name token.Token) any {
 
 	method := i.class.FindMethod(name.Lexeme)
 	if method != nil {
-		return method
+		return method.Bind(i)
 	}
 
-	panicMsg := "Only instances have properties."
+	panicMsg := "Undefined property '" + name.Lexeme + "'."
 	error.ReportRuntimeError(name, panicMsg)
 	panic(panicMsg)
 }

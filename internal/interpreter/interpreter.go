@@ -153,11 +153,16 @@ func (i *Interpreter) VisitSetExpr(expr *ast.Set) any {
 	if instance, ok := object.(*Instance); ok {
 		value := i.evaluate(expr.Value)
 		instance.Set(expr.Name, value)
+		return value
 	}
 
 	panicMsg := "Only instances have fields."
 	e.ReportRuntimeError(expr.Name, panicMsg)
 	panic(panicMsg)
+}
+
+func (i *Interpreter) VisitThisExpr(expr *ast.This) any {
+	return i.lookUpVariable(expr.Keyword, expr)
 }
 
 func (i *Interpreter) VisitBinaryExpr(expr *ast.Binary) any {
@@ -249,7 +254,7 @@ func (i *Interpreter) VisitWhileStmt(stmt *ast.While) any {
 }
 
 func (i *Interpreter) VisitFunctionStmt(stmt *ast.Function) any {
-	function := NewFunction(stmt, i.environment)
+	function := NewFunction(stmt, i.environment, false)
 	i.environment.Define(stmt.Name.Lexeme, function)
 	return nil
 }
@@ -269,7 +274,7 @@ func (i *Interpreter) VisitClassStmt(stmt *ast.Class) any {
 
 	methods := make(map[string]*Function)
 	for _, method := range stmt.Methods {
-		function := NewFunction(method, i.environment)
+		function := NewFunction(method, i.environment, method.Name.Lexeme == "init")
 		methods[method.Name.Lexeme] = function
 	}
 

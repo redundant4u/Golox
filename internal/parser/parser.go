@@ -300,7 +300,7 @@ func (p *Parser) assignment() ast.Expr {
 		} else if get, ok := expr.(*ast.Get); ok {
 			object := get.Object
 			name := get.Name
-			return &ast.Get{Object: object, Name: name}
+			return &ast.Set{Object: object, Name: name, Value: value}
 		}
 
 		p.panicError(equals, "Invalid assignment target.")
@@ -460,6 +460,10 @@ func (p *Parser) primary() ast.Expr {
 
 	if p.match(token.NUMBER, token.STRING) {
 		return &ast.Literal{Value: p.previous().Literal}
+	}
+
+	if p.match(token.THIS) {
+		return &ast.This{Keyword: p.previous()}
 	}
 
 	if p.match(token.IDENTIFIER) {

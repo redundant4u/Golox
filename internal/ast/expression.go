@@ -16,6 +16,8 @@ type ExprVisitor interface {
 	VisitLogicalExpr(expr *Logical) any
 	VisitCallExpr(expr *Call) any
 	VisitGetExpr(expr *Get) any
+	VisitSetExpr(expr *Set) any
+	VisitThisExpr(expr *This) any
 }
 
 type Binary struct {
@@ -69,6 +71,10 @@ type Set struct {
 	Value  Expr
 }
 
+type This struct {
+	Keyword token.Token
+}
+
 func (expr *Binary) Accept(v ExprVisitor) any {
 	return v.VisitBinaryExpr(expr)
 }
@@ -103,4 +109,12 @@ func (expr *Call) Accept(v ExprVisitor) any {
 
 func (expr *Get) Accept(v ExprVisitor) any {
 	return v.VisitGetExpr(expr)
+}
+
+func (expr *Set) Accept(v ExprVisitor) any {
+	return v.VisitSetExpr(expr)
+}
+
+func (expr *This) Accept(v ExprVisitor) any {
+	return v.VisitThisExpr(expr)
 }
