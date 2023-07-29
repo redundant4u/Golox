@@ -7,13 +7,13 @@ import (
 
 type Environment struct {
 	values    map[string]any
-	enclosing *Environment
+	Enclosing *Environment
 }
 
 func New(enclosing *Environment) *Environment {
 	return &Environment{
 		values:    make(map[string]any),
-		enclosing: enclosing,
+		Enclosing: enclosing,
 	}
 }
 
@@ -24,7 +24,7 @@ func (env *Environment) Define(name string, value any) {
 func (env *Environment) ancestor(distance int) *Environment {
 	environment := env
 	for i := 0; i < distance; i++ {
-		environment = environment.enclosing
+		environment = environment.Enclosing
 	}
 	return environment
 }
@@ -38,8 +38,8 @@ func (env *Environment) Get(name token.Token) any {
 		return value
 	}
 
-	if env.enclosing != nil {
-		return env.enclosing.Get(name)
+	if env.Enclosing != nil {
+		return env.Enclosing.Get(name)
 	}
 
 	panic(e.RuntimeError{Token: name, Message: "Undefined variable '" + name.Lexeme + "'."})
@@ -55,8 +55,8 @@ func (env *Environment) Assign(name token.Token, value any) {
 		return
 	}
 
-	if env.enclosing != nil {
-		env.enclosing.Assign(name, value)
+	if env.Enclosing != nil {
+		env.Enclosing.Assign(name, value)
 		return
 	}
 

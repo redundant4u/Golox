@@ -1,20 +1,26 @@
 package interpreter
 
 type Class struct {
-	name    string
-	methods map[string]*Function
+	name       string
+	superclass *Class
+	methods    map[string]*Function
 }
 
-func NewClass(name string, methods map[string]*Function) *Class {
+func NewClass(name string, superclass *Class, methods map[string]*Function) *Class {
 	return &Class{
-		name:    name,
-		methods: methods,
+		name:       name,
+		superclass: superclass,
+		methods:    methods,
 	}
 }
 
 func (c *Class) FindMethod(name string) *Function {
 	if _, ok := c.methods[name]; ok {
 		return c.methods[name]
+	}
+
+	if c.superclass != nil {
+		return c.superclass.FindMethod(name)
 	}
 
 	return nil

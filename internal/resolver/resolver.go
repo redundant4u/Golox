@@ -20,6 +20,7 @@ const (
 const (
 	NOT_CLASS ClassType = iota
 	CLASS
+	SUBCLASS
 )
 
 type Resolver struct {
@@ -93,6 +94,22 @@ func (r *Resolver) VisitClassStmt(stmt *ast.Class) any {
 	r.declare(stmt.Name)
 	r.define(stmt.Name)
 
+	if stmt.Superclass != nil && stmt.Name.Lexeme == stmt.Superclass.Name.Lexeme {
+		panicMsg := "A class can't inherit from iteself."
+		e.ReportRuntimeError(stmt.Superclass.Name, panicMsg)
+		panic(panicMsg)
+	}
+
+	if stmt.Superclass != nil {
+		r.currentClass = SUBCLASS
+		r.resolveExpr(stmt.Superclass)
+	}
+
+	if stmt.Superclass != nil {
+		r.beginScope()
+		r.scopes[len(r.scopes)-1]["super"] = true
+	}
+
 	r.beginScope()
 	r.scopes[len(r.scopes)-1]["this"] = true
 
@@ -105,6 +122,10 @@ func (r *Resolver) VisitClassStmt(stmt *ast.Class) any {
 	}
 
 	r.endScope()
+
+	if stmt.Superclass != nil {
+		r.endScope()
+	}
 
 	r.currentClass = enclosingClass
 
@@ -154,6 +175,19 @@ func (r *Resolver) VisitGetExpr(expr *ast.Get) any {
 func (r *Resolver) VisitSetExpr(expr *ast.Set) any {
 	r.resolveExpr(expr.Value)
 	r.resolveExpr(expr.Object)
+	return nil
+}
+
+func (r *Resolver) VisitSuperExpr(expr *ast.Super) any {
+	if r.currentClass == NOT_CLASS {
+		e.ReportError(expr.Keyword.Line, expr.Keyword.Lexeme, "Can't use 'super' outside of a class.")
+		return nil
+	} else if r.currentClass != SUBCLASS {
+		e.ReportError(expr.Keyword.Line, expr.Keyword.Lexeme, "Can't use 'super' in a class with no superclass.")
+		return nil
+	}
+
+	r.resolveLocal(expr, expr.Keyword)
 	return nil
 }
 
