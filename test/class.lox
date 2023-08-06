@@ -1,0 +1,77 @@
+// Class
+
+class Box {}
+
+fun notMethod(argument) {
+  print "called function with " + argument;
+}
+
+var box = Box();
+box.function = notMethod;
+box.function("argument");
+
+// Methods on Classes
+
+class Bacon {
+  eat() {
+    print "Crunch crunch crunch!";
+  }
+}
+
+Bacon().eat(); // Prints "Crunch crunch crunch!".
+
+// ---
+
+class Person {
+  sayName() {
+    print this.name;
+  }
+}
+
+var jane = Person();
+jane.name = "Jane";
+
+var bill = Person();
+bill.name = "Bill";
+
+bill.sayName = jane.sayName;
+bill.sayName(); // ?
+
+// This
+
+class Cake {
+  taste() {
+    var adjective = "delicious";
+    print "The " + this.flavor + " cake is " + adjective + "!";
+  }
+}
+
+var cake = Cake();
+cake.flavor = "German chocolate";
+cake.taste(); // Prints "The German chocolate cake is delicious!".
+
+// ---
+
+class Thing {
+  getCallback() {
+    fun localFunction() {
+      print this;
+    }
+
+    return localFunction;
+  }
+}
+
+var callback = Thing().getCallback();
+callback();
+
+// Invoking init() directly
+
+class Foo {
+  init() {
+    print this;
+  }
+}
+
+var foo = Foo();
+print foo.init();
