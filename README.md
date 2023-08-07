@@ -1,8 +1,20 @@
 # Golox
 
-- Implementation lox language & interpreter using golang.
-- Golang study space
+- Implementation of lox language & interpreter using Golang
+- Tree-walk interpreter
 - Reference: [Crafting Interpreters book](http://www.craftinginterpreters.com)
+
+# Usage
+
+```bash
+go run main.go
+```
+
+## Example
+
+```bash
+go run main.go test/hello.lox
+```
 
 # Update
 
