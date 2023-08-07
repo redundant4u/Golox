@@ -2,21 +2,21 @@
 
 - Implementation of lox language & interpreter using Golang
 - Tree-walk interpreter
-- Reference: [Crafting Interpreters book](http://www.craftinginterpreters.com)
+- Reference: [Crafting Interpreters](https://www.craftinginterpreters.com)
 
-# Usage
+## Usage
 
 ```bash
 go run main.go
 ```
 
-## Example
+### Example
 
 ```bash
 go run main.go test/hello.lox
 ```
 
-# Update
+## Update
 
 - 230729: Add inheritance ([Chapter13](https://www.craftinginterpreters.com/inheritance.html))
 - 230715: Add class ([Chapter12](https://www.craftinginterpreters.com/classes.html))
